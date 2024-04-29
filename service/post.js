@@ -135,7 +135,7 @@ module.exports = class PostService {
         {
           where: {
             id: postId,
-            userIdx: req.user.id,
+            /*    userIdx: req.user.id, */
           },
         }
       );
@@ -387,7 +387,7 @@ module.exports = class PostService {
       Post.destroy({
         where: {
           id: postId,
-          userIdx: req.user.id,
+          /*    userIdx: req.user.id, */
         },
       });
 
@@ -444,7 +444,7 @@ module.exports = class PostService {
       const commentId = req.params.commentId;
 
       await Comment.destroy({
-        where: { id: commentId, UserId: req.user.id },
+        where: { id: commentId /*  UserId: req.user.id */ },
       });
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
@@ -469,7 +469,7 @@ module.exports = class PostService {
         {
           where: {
             id: commentId,
-            UserId: req.user.id,
+            /*   UserId: req.user.id, */
           },
         }
       );
@@ -530,7 +530,7 @@ module.exports = class PostService {
       const commentId = req.params.commentId;
       const reCommentId = req.params.reCommentId;
       await ReComment.destroy({
-        where: { id: reCommentId, UserId: req.user.id },
+        where: { id: reCommentId /*  UserId: req.user.id */ },
       });
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
@@ -556,7 +556,7 @@ module.exports = class PostService {
         {
           where: {
             id: reCommentId,
-            UserId: req.user.id,
+            /*   UserId: req.user.id, */
           },
         }
       );
