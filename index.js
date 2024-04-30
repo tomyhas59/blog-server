@@ -13,13 +13,12 @@ const dotenv = require("dotenv");
 const passportConfig = require("./passport");
 const passport = require("passport");
 
-dotenv.config();
-/* db.sequelize
-  .sync()
-  .then(() => {
-    console.log("db 연결 성공");
-  })
-  .catch(console.error); */
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("/", function (req, res) {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -70,7 +69,7 @@ db.sequelize
   })
   .catch(console.error);
 
-//---------jwt token----------------------------
+//---------jwt----------------------------
 
 app.post("/jwtsetcookie", (req, res, next) => {
   try {
