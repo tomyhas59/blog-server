@@ -23,7 +23,7 @@ app.get("/", function (req, res) {
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "https://tomyhasblog.vercel.app",
     credentials: true, //쿠키 보내는 코드, 프론트의 saga/index에서 axios.defaults.withCredentials = true 해줘야 쿠키 받음
   })
 );
