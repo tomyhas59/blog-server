@@ -23,7 +23,10 @@ app.get("/", function (req, res) {
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
   cors({
-    origin: "https://tomyhasblog.vercel.app",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://tomyhasblog.vercel.app"
+        : "http://localhost:3000",
     credentials: true, //쿠키 보내는 코드, 프론트의 saga/index에서 axios.defaults.withCredentials = true 해줘야 쿠키 받음
   })
 );
@@ -118,6 +121,12 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-app.listen(3075, () => {
-  console.log("서버 실행중");
+const port = process.env.NODE_ENV === "production" ? 8080 : 3075;
+
+app.listen(port, () => {
+  console.log(
+    process.env.NODE_ENV === "production"
+      ? "프로덕션 서버 실행 중"
+      : "개발 모드 실행 중"
+  );
 });
