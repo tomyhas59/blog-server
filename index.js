@@ -94,7 +94,7 @@ app.post("/jwtsetcookie", (req, res, next) => {
     }
 
     res.header("LYH", token);
-    res.cookie("access_token", token, { httpOnly: true, cookieOptions });
+    res.cookie("access_token", token, cookieOptions);
     res.send({ message: "success" });
   } catch (err) {
     console.log(err);
