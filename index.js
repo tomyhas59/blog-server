@@ -13,12 +13,6 @@ const dotenv = require("dotenv");
 const passportConfig = require("./passport");
 const passport = require("passport");
 
-app.use(express.static(path.join(__dirname, "build")));
-
-app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
-
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -94,8 +88,13 @@ app.post("/jwtsetcookie", (req, res, next) => {
     //     secure: false, //https에서만 사용 가능
     //   }
     // );
+    let cookieOptions = { httpOnly: true };
+    if (process.env.NODE_ENV === "production") {
+      cookieOptions.secure = true;
+    }
+
     res.header("LYH", token);
-    res.cookie("access_token", token, { httpOnly: true });
+    res.cookie("access_token", token, { httpOnly: true, cookieOptions });
     res.send({ message: "success" });
   } catch (err) {
     console.log(err);
