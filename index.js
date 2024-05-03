@@ -23,7 +23,7 @@ app.use(
     origin:
       process.env.NODE_ENV === "production"
         ? "https://tomyhasblog.vercel.app"
-        : "https://localhost:3000",
+        : "http://localhost:3000",
     credentials: true, //쿠키 보내는 코드, 프론트의 saga/index에서 axios.defaults.withCredentials = true 해줘야 쿠키 받음
   })
 );
