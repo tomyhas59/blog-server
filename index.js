@@ -29,6 +29,7 @@ app.use(
 );
 
 app.use(cookieParser());
+
 // image 저장 경로 설정----------------------------
 app.use(
   "/",
@@ -109,7 +110,7 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-const port = process.env.NODE_ENV === "production" ? 8080 : 3075;
+const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
 
 app.listen(port, () => {
   console.log(
