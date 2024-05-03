@@ -1,5 +1,3 @@
-const postRouter = require("./routes/post");
-const userRouter = require("./routes/user");
 const express = require("express");
 const app = express();
 const morgan = require("morgan"); //middleware
@@ -7,7 +5,7 @@ const cors = require("cors");
 const path = require("path");
 const session = require("express-session");
 const cookieParser = require("cookie-parser"); //middleware
-const jwt = require("jsonwebtoken");
+const { JWT, JWK } = require("jose");
 const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
@@ -15,6 +13,8 @@ const passport = require("passport");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
+const postRouter = require("./routes/post");
+const userRouter = require("./routes/user");
 
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
@@ -71,26 +71,14 @@ db.sequelize
 
 //---------jwt----------------------------
 
-app.post("/jwtsetcookie", (req, res, next) => {
+app.post("/jwtsetcookie", async (req, res, next) => {
   try {
-    const token = jwt.sign(
+    const token = await JWT.sign(
       { email: req.body.email },
-      process.env.SECRET_JWT_TOKEN_KEY
+      JWK.asKey(Buffer.from(process.env.SECRET_JWT_TOKEN_KEY, "base64")),
+      { expiresIn: "1h", alg: "HS256" }
     );
 
-    // res.cookie(
-    //   "token" /*cookie의 이름*/,
-    //   {
-    //     token: req.email,
-    //     expired: 5 * 60000, //생명 주기, front한테 요청
-    //   },
-    //   {
-    //     maxAge: 5 * 60000, //생명주기, backend에서 요청
-    //     httpOnly: true, //웹 서버에서만 사용 가능
-    //     //signed: true, //암호화된 쿠키, cookieParser()안에 암호화 키 등록
-    //     secure: false, //https에서만 사용 가능
-    //   }
-    // );
     let cookieOptions = { httpOnly: true };
     if (process.env.NODE_ENV === "production") {
       cookieOptions.secure = true;
@@ -105,12 +93,19 @@ app.post("/jwtsetcookie", (req, res, next) => {
   }
 });
 
-app.get("/jwtshowcookie", (req, res) => {
+app.get("/jwtshowcookie", async (req, res) => {
   const token = req.cookies.access_token;
-  res.send(token);
-  console.log(jwt.verify(token, process.env.SECRET_JWT_TOKEN_KEY)); //verify 복호화키 검사
-  console.log(jwt.decode(token)); //decode 복호화 키 없이 해석
-  // res.send(req.signedCookies.token); // signed: true 일 때
+  try {
+    const verifiedToken = await JWT.verify(
+      token,
+      JWK.asKey(Buffer.from(process.env.SECRET_JWT_TOKEN_KEY, "base64"))
+    );
+    console.log("Decoded Token:", verifiedToken.payload);
+    res.send(token);
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    res.status(401).send("Unauthorized");
+  }
 });
 
 app.post("/clearcookie", (req, res) => {
