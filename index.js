@@ -12,6 +12,9 @@ const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
 const passport = require("passport");
+const fs = require("fs");
+const https = require("https");
+const http = require("http");
 
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
@@ -120,12 +123,24 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-const port = process.env.NODE_ENV === "production" ? 8080 : 3075;
+// HTTP Server
+if (process.env.NODE_ENV === "development") {
+  const httpServer = http.createServer(app);
+  const port = process.env.PORT || 3075;
+  httpServer.listen(port, () => {
+    console.log("개발 서버 " + port);
+  });
+}
+// HTTPS Server
+if (process.env.NODE_ENV === "production") {
+  const options = {
+    key: fs.readFileSync("./cert.key"),
+    cert: fs.readFileSync("./cert.crt"),
+  };
 
-app.listen(port, () => {
-  console.log(
-    process.env.NODE_ENV === "production"
-      ? "프로덕션 서버 실행 중"
-      : "개발 모드 실행 중"
-  );
-});
+  const httpsServer = https.createServer(options, app);
+  const port = process.env.PORT || 8080;
+  httpsServer.listen(port, () => {
+    console.log("프로덕션 서버 " + port);
+  });
+}
