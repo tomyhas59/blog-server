@@ -63,59 +63,61 @@ module.exports = class PostService {
 
   static async create(req, res, next) {
     try {
-      const post = await Post.create({
-        content: req.body.content,
-        userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ req.user.id,
-        //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
-      });
+      if (req.user.id) {
+        const post = await Post.create({
+          content: req.body.content,
+          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ req.user.id,
+          //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
+        });
 
-      if (req.body.image) {
         if (req.body.image) {
-          const imagePromises = Array.isArray(req.body.image)
-            ? req.body.image.map((image) => Image.create({ src: image }))
-            : [Image.create({ src: req.body.image })];
+          if (req.body.image) {
+            const imagePromises = Array.isArray(req.body.image)
+              ? req.body.image.map((image) => Image.create({ src: image }))
+              : [Image.create({ src: req.body.image })];
 
-          const imageResults = await Promise.allSettled(imagePromises);
+            const imageResults = await Promise.allSettled(imagePromises);
 
-          const successfulImages = imageResults
-            .filter((result) => result.status === "fulfilled")
-            .map((result) => result.value);
+            const successfulImages = imageResults
+              .filter((result) => result.status === "fulfilled")
+              .map((result) => result.value);
 
-          await post.addImages(successfulImages);
+            await post.addImages(successfulImages);
+          }
         }
+        const fullPost = await Post.findOne({
+          where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
+          include: [
+            {
+              model: Image,
+            },
+            {
+              model: User, //게시글 작성자
+              attributes: ["id", "email", "nickname"],
+            },
+            {
+              model: User, //좋아요 누른 사람
+              as: "Likers", //post.Likers.id 이런 식으로 불러옴
+              attributes: ["id", "nickname"],
+            },
+            {
+              model: Comment,
+              include: [
+                {
+                  model: ReComment,
+                  include: [{ model: User, attributes: ["id", "nickname"] }],
+                  attributes: ["id", "content"],
+                },
+                {
+                  model: User, //댓글 작성자
+                  attributes: ["id", "nickname"],
+                },
+              ],
+            },
+          ],
+        });
+        res.status(200).json(fullPost);
       }
-      const fullPost = await Post.findOne({
-        where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
-        include: [
-          {
-            model: Image,
-          },
-          {
-            model: User, //게시글 작성자
-            attributes: ["id", "email", "nickname"],
-          },
-          {
-            model: User, //좋아요 누른 사람
-            as: "Likers", //post.Likers.id 이런 식으로 불러옴
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: Comment,
-            include: [
-              {
-                model: ReComment,
-                include: [{ model: User, attributes: ["id", "nickname"] }],
-                attributes: ["id", "content"],
-              },
-              {
-                model: User, //댓글 작성자
-                attributes: ["id", "nickname"],
-              },
-            ],
-          },
-        ],
-      });
-      res.status(200).json(fullPost);
     } catch (err) {
       console.error(err);
       next(err); //status 500임
