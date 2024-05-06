@@ -1,6 +1,11 @@
 const jwt = require("jsonwebtoken");
 
 exports.isLoggedIn = (req, res, next) => {
+  // 쿠키 헤더가 없는 경우에 대비하여 처리합니다.
+  if (!req.headers.cookie) {
+    return res.status(401).send("헤더에 쿠키가 없습니다.");
+  }
+
   // 쿠키에서 토큰을 추출합니다.
   const cookies = req.headers.cookie.split(";").map((cookie) => cookie.trim());
   const tokenCookie = cookies.find((cookie) =>

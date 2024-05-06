@@ -69,9 +69,9 @@ module.exports = class UserService {
 
       res.cookie("access_token", token, {
         httpOnly: true,
+        secure: true,
       });
 
-      // 유저의 닉네임, 아이디, 이메일을 응답에 포함합니다.
       res.status(200).json({
         nickname: user.nickname,
         id: user.id,
