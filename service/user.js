@@ -70,6 +70,7 @@ module.exports = class UserService {
       res.cookie("access_token", token, {
         httpOnly: true,
         secure: true,
+        sameSite: "None",
       });
 
       res.status(200).json({
