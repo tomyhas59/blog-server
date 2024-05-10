@@ -9,7 +9,6 @@ const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
-const passport = require("passport");
 app.use(express.static(path.join(__dirname, "build")));
 app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "build", "index.html"));
