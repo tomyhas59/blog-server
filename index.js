@@ -122,9 +122,10 @@ app.listen(port, () => {
 });
 
 // Socket
-const httpServer = http.createServer(app);
-const httpsServer = https.createServer(app);
-const io = socketIO(httpServer, {
+const server = process.env.NODE_ENV === "production" ? https : http;
+const serverInstance = server.createServer(app);
+
+const io = socketIO(serverInstance, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
@@ -148,12 +149,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const socketPort = process.env.NODE_ENV === "production" ? 8001 : 3001;
+const socketPort = process.env.NODE_ENV === "production" ? 8000 : 3001;
 
-process.env.NODE_ENV === "production"
-  ? httpsServer.listen(socketPort, () => {
-      console.log(`Socket server running on port ${socketPort}`);
-    })
-  : httpServer.listen(socketPort, () => {
-      console.log(`Socket server running on port ${socketPort}`);
-    });
+serverInstance.listen(socketPort, () => {
+  console.log(`Socket server running on port ${socketPort}`);
+});
