@@ -111,7 +111,7 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
+const port = process.env.NODE_ENV === "production" ? 8001 : 3075;
 
 app.listen(port, () => {
   console.log(
@@ -149,7 +149,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const socketPort = process.env.NODE_ENV === "production" ? 8001 : 3001;
+const socketPort = process.env.NODE_ENV === "production" ? 8000 : 3001;
 
 serverInstance.listen(socketPort, () => {
   console.log(`Socket server running on port ${socketPort}`);
