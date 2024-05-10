@@ -149,7 +149,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const socketPort = process.env.NODE_ENV === "production" ? 8000 : 3001;
+const socketPort = process.env.NODE_ENV === "production" ? 8001 : 3001;
 
 serverInstance.listen(socketPort, () => {
   console.log(`Socket server running on port ${socketPort}`);
