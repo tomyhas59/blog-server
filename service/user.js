@@ -3,6 +3,7 @@ const User = require("../models/user");
 const Post = require("../models/post");
 const Comment = require("../models/comment");
 const passport = require("passport");
+const jwt = require("jsonwebtoken");
 
 module.exports = class UserService {
   static async signUp(req, res, next) {
@@ -39,34 +40,53 @@ module.exports = class UserService {
   //----------------------------------------------------------------------
 
   static async logIn(req, res, next) {
-    passport.authenticate("local", (err, user, info) => {
-      if (err) {
-        console.log(err);
-        return next(err);
-      }
+    try {
+      const user = await User.findOne({
+        where: {
+          email: req.body.email,
+        },
+        attributes: ["id", "nickname", "email", "password"],
+      });
+
       if (!user) {
-        return res.status(401).send(info.messege);
+        return res.status(401).send("가입되지 않은 이메일입니다.");
       }
 
-      /*login 실행 함수 , passport에서 가져옴*/
-      return req.login(user, async (loginErr) => {
-        if (loginErr) {
-          console.error(loginErr);
-          return next(loginErr);
-        }
-        const fullUser = await User.findOne({
-          where: { id: user.id },
-          attributes: {
-            exclude: ["password"],
-          },
-        });
-        return res.status(200).json(fullUser);
+      const isValidPassword = await bcrypt.compare(
+        req.body.password,
+        user.password
+      );
+
+      if (!isValidPassword) {
+        return res.status(401).send("비밀번호가 틀렸습니다.");
+      }
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      res.cookie("access_token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
       });
-    })(req, res, next); //이걸 써줘야 passport로 전달됨
+
+      res.status(200).json({
+        nickname: user.nickname,
+        id: user.id,
+        email: user.email,
+        token,
+      });
+    } catch (err) {
+      console.error(err);
+      next(err);
+    }
   }
   //----------------------------------------------------------------------
 
-  static async main(req, res, next) {
+  /*  static async main(req, res, next) {
     console.log(req.headers); //headers 안에 쿠키 있음
     try {
       if (req.user) {
@@ -95,15 +115,15 @@ module.exports = class UserService {
       console.error(error);
       next(error);
     }
-  }
+  } */
   //----------------------------------------------------------------------
-
   static async logOut(req, res, next) {
-    req.logout();
-    req.session.destroy();
-    res.send("ok");
-  }
-  catch(err) {
-    next(err);
+    try {
+      res.clearCookie("access_token"); // access_token 쿠키 삭제
+      res.send("ok");
+    } catch (err) {
+      console.error(err);
+      next(err);
+    }
   }
 };

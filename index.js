@@ -1,21 +1,22 @@
+const postRouter = require("./routes/post");
+const userRouter = require("./routes/user");
 const express = require("express");
 const app = express();
 const morgan = require("morgan"); //middleware
 const cors = require("cors");
 const path = require("path");
-const session = require("express-session");
 const cookieParser = require("cookie-parser"); //middleware
-const { JWT, JWK } = require("jose");
 const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
 const passport = require("passport");
-const fs = require("fs");
-const https = require("https");
+app.use(express.static(path.join(__dirname, "build")));
+app.get("/", function (req, res) {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 const http = require("http");
-const postRouter = require("./routes/post");
-const userRouter = require("./routes/user");
-
+const https = require("https");
+const socketIO = require("socket.io");
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -27,6 +28,7 @@ app.use(
     credentials: true, //쿠키 보내는 코드, 프론트의 saga/index에서 axios.defaults.withCredentials = true 해줘야 쿠키 받음
   })
 );
+
 app.use(cookieParser());
 
 // image 저장 경로 설정----------------------------
@@ -34,7 +36,6 @@ app.use(
   "/",
   /*localhost:3075/와 같다*/ express.static(path.join(__dirname, "uploads"))
 );
-
 app.use(
   morgan("dev"), //로그를 찍어줌 ,종류 dev(개발용), combined(배포용), common, short, tiny
   express.json(), //json req.body 데이터 읽는 것 허용
@@ -42,9 +43,8 @@ app.use(
   // extended: false (nodeJS에 내장된 qureystring 모듈로 해석)
   // extended: true (추가로 설치하여 외부 해석툴 qs로 해석)
 );
-
 //session------------------------------------
-app.use(
+/* app.use(
   session({
     secret: "node-secret", //암호키 이름
     resave: false, //세션이 값이 똑같으면 다시 저장 안 함
@@ -55,11 +55,10 @@ app.use(
       maxAge: 5 * 60000,
     },
   })
-);
+); */
 //passport----위치는 session 아래로----------------------------------
-app.use(passport.initialize());
-app.use(passport.session());
-
+/* app.use(passport.initialize());
+app.use(passport.session()); */
 //sequelize-----------------------------------
 dotenv.config();
 db.sequelize
@@ -68,74 +67,94 @@ db.sequelize
     console.log("db 연결 성공");
   })
   .catch(console.error);
-
 //---------jwt----------------------------
-
-app.post("/jwtsetcookie", async (req, res, next) => {
-  try {
-    const token = await JWT.sign(
-      { email: req.body.email },
-      JWK.asKey(Buffer.from(process.env.SECRET_JWT_TOKEN_KEY, "base64")),
-      { expiresIn: "1h", alg: "HS256" }
-    );
-
-    let cookieOptions = { httpOnly: true };
-    if (process.env.NODE_ENV === "production") {
-      cookieOptions.secure = true;
-    }
-
-    res.header("LYH", token);
-    res.cookie("access_token", token, cookieOptions);
-    res.send({ message: "success" });
-  } catch (err) {
-    console.log(err);
-    next(err);
-  }
-});
-
-app.get("/jwtshowcookie", async (req, res) => {
-  const token = req.cookies.access_token;
-  try {
-    const verifiedToken = await JWT.verify(
-      token,
-      JWK.asKey(Buffer.from(process.env.SECRET_JWT_TOKEN_KEY, "base64"))
-    );
-    console.log("Decoded Token:", verifiedToken.payload);
-    res.send(token);
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    res.status(401).send("Unauthorized");
-  }
-});
-
-app.post("/clearcookie", (req, res) => {
-  res.clearCookie("token");
-  res.send({ message: "성공" });
-});
+// app.post("/jwtsetcookie", (req, res, next) => {
+//   try {
+//     const token = jwt.sign(
+//       { email: req.body.email },
+//       process.env.SECRET_JWT_TOKEN_KEY
+//     );
+//     // res.cookie(
+//     //   "token" /*cookie의 이름*/,
+//     //   {
+//     //     token: req.email,
+//     //     expired: 5 * 60000, //생명 주기, front한테 요청
+//     //   },
+//     //   {
+//     //     maxAge: 5 * 60000, //생명주기, backend에서 요청
+//     //     httpOnly: true, //웹 서버에서만 사용 가능
+//     //     //signed: true, //암호화된 쿠키, cookieParser()안에 암호화 키 등록
+//     //     secure: false, //https에서만 사용 가능
+//     //   }
+//     // );
+//     res.header("LYH", token);
+//     res.cookie("access_token", token, { httpOnly: true });
+//     res.send({ message: "success" });
+//   } catch (err) {
+//     console.log(err);
+//     next(err);
+//   }
+// });
+// app.get("/jwtshowcookie", (req, res) => {
+//   const token = req.cookies.access_token;
+//   res.send(token);
+//   console.log(jwt.verify(token, process.env.SECRET_JWT_TOKEN_KEY)); //verify 복호화키 검사
+//   console.log(jwt.decode(token)); //decode 복호화 키 없이 해석
+//   // res.send(req.signedCookies.token); // signed: true 일 때
+// });
+// app.post("/clearcookie", (req, res) => {
+//   res.clearCookie("token");
+//   res.send({ message: "성공" });
+// });
 
 app.use("/user", userRouter);
 app.use("/post", postRouter);
 
 passportConfig();
 
-// HTTP Server
-if (process.env.NODE_ENV === "development") {
-  const httpServer = http.createServer(app);
-  const port = process.env.PORT || 3075;
-  httpServer.listen(port, () => {
-    console.log("개발 서버 " + port);
-  });
-}
-// HTTPS Server
-if (process.env.NODE_ENV === "production") {
-  const options = {
-    key: fs.readFileSync("./cert.key"),
-    cert: fs.readFileSync("./cert.crt"),
-  };
+const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
 
-  const httpsServer = https.createServer(options, app);
-  const port = process.env.PORT || 8080;
-  httpsServer.listen(port, () => {
-    console.log("프로덕션 서버 " + port);
+app.listen(port, () => {
+  console.log(
+    process.env.NODE_ENV === "production"
+      ? "프로덕션 서버 실행 중"
+      : "개발 모드 실행 중"
+  );
+});
+
+// Socket
+const httpServer = http.createServer(app);
+const httpsServer = https.createServer(app);
+const io = socketIO(httpServer, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://tomyhasblog.vercel.app"
+        : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("sendMessage", (message) => {
+    console.log("Received message:", message);
+    io.emit("receiveMessage", message);
   });
-}
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
+  });
+});
+
+const socketPort = process.env.NODE_ENV === "production" ? 8001 : 3001;
+
+process.env.NODE_ENV === "production"
+  ? httpsServer.listen(socketPort, () => {
+      console.log(`Socket server running on port ${socketPort}`);
+    })
+  : httpServer.listen(socketPort, () => {
+      console.log(`Socket server running on port ${socketPort}`);
+    });
