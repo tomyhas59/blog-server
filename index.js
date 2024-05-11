@@ -108,7 +108,6 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-const server = process.env.NODE_ENV === "production" ? https : http;
 const serverInstance = http.createServer(app);
 
 // Socket
