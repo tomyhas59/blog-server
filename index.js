@@ -9,11 +9,10 @@ const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
-app.use(express.static(path.join(__dirname, "build")));
-
 const http = require("http");
 const https = require("https");
 const socketIO = require("socket.io");
+
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -109,9 +108,10 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-// Socket
 const server = process.env.NODE_ENV === "production" ? https : http;
-const serverInstance = server.createServer(app);
+const serverInstance = http.createServer(app);
+
+// Socket
 
 const io = socketIO(serverInstance, {
   cors: {
