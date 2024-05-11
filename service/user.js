@@ -1,8 +1,5 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
-const Post = require("../models/post");
-const Comment = require("../models/comment");
-const passport = require("passport");
 const jwt = require("jsonwebtoken");
 
 module.exports = class UserService {
@@ -67,11 +64,12 @@ module.exports = class UserService {
         { expiresIn: "1h" }
       );
 
-      res.cookie("access_token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-      });
+      const cookieOptions =
+        process.env.NODE_ENV === "production"
+          ? { httpOnly: true, secure: true, sameSite: "None" }
+          : { httpOnly: true, sameSite: "Lax" };
+
+      res.cookie("access_token", token, cookieOptions);
 
       res.status(200).json({
         nickname: user.nickname,
