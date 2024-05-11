@@ -10,9 +10,7 @@ const db = require("./models");
 const dotenv = require("dotenv");
 const passportConfig = require("./passport");
 app.use(express.static(path.join(__dirname, "build")));
-app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
+
 const http = require("http");
 const https = require("https");
 const socketIO = require("socket.io");
@@ -111,16 +109,6 @@ app.use("/post", postRouter);
 
 passportConfig();
 
-const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
-
-app.listen(port, () => {
-  console.log(
-    process.env.NODE_ENV === "production"
-      ? "프로덕션 서버 실행 중"
-      : "개발 모드 실행 중"
-  );
-});
-
 // Socket
 const server = process.env.NODE_ENV === "production" ? https : http;
 const serverInstance = server.createServer(app);
@@ -149,8 +137,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const socketPort = process.env.NODE_ENV === "production" ? 8001 : 3001;
+const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
 
-serverInstance.listen(socketPort, () => {
-  console.log(`Socket server running on port ${socketPort}`);
+serverInstance.listen(port, () => {
+  console.log(`server running on port ${port}`);
 });
