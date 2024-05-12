@@ -123,12 +123,36 @@ const io = socketIO(serverInstance, {
   },
 });
 
+const connectedUsers = new Map();
+
 io.on("connection", (socket) => {
-  console.log("A user connected");
+  socket.on("loginUser", (userInfo) => {
+    console.log("Received user info:", userInfo);
+    // 유저 정보를 connectedUsers에 등록
+    connectedUsers.set(userInfo.id, userInfo.nickname);
+
+    // 유저 리스트를 클라이언트로 전달
+    const userList = Array.from(connectedUsers).map(([id, nickname]) => ({
+      id,
+      nickname,
+    }));
+    io.emit("updateUserList", userList);
+  });
 
   socket.on("sendMessage", (message) => {
-    console.log("Received message:", message);
     io.emit("receiveMessage", message);
+  });
+
+  // 로그아웃 시 유저 제거
+  socket.on("logoutUser", (userId) => {
+    console.log("----", userId);
+    connectedUsers.delete(userId);
+    // 유저 리스트를 클라이언트로 전달
+    const userList = Array.from(connectedUsers).map(([id, nickname]) => ({
+      id,
+      nickname,
+    }));
+    io.emit("updateUserList", userList);
   });
 
   socket.on("disconnect", () => {
