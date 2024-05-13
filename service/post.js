@@ -6,6 +6,7 @@ const Image = require("../models/image");
 const fs = require("fs");
 const path = require("path");
 const { Op } = require("sequelize");
+const Chat = require("../models/chat");
 
 module.exports = class PostService {
   static async imageUpload(req, res) {
@@ -599,6 +600,31 @@ module.exports = class PostService {
       }
       await post.removeLikers(req.user.id);
       res.status(200).json({ PostId: post.id, UserId: req.user.id });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  //chat----------------------------------------------
+  static async createChatMessage(req, res, netx) {
+    try {
+      if (req.user.id) {
+        const chatMessage = await Chat.create({
+          sender: req.user.nickname,
+          content: req.body.content,
+          UserId: req.user.id,
+        });
+        const fullChatMessage = await Chat.findOne({
+          where: { id: chatMessage.id },
+          include: [
+            {
+              model: User,
+              attributes: ["id", "nickname"],
+            },
+          ],
+        });
+        res.status(201).json(fullChatMessage);
+      }
     } catch (error) {
       console.error(error);
       next(error);
