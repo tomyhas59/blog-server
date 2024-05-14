@@ -606,11 +606,11 @@ module.exports = class PostService {
     }
   }
   //chat----------------------------------------------
-  static async createChatMessage(req, res, netx) {
+  static async createChatMessage(req, res, next) {
     try {
       if (req.user.id) {
         const chatMessage = await Chat.create({
-          sender: req.user.nickname,
+          sender: req.body.sender,
           content: req.body.content,
           UserId: req.user.id,
         });
