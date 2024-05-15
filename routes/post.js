@@ -53,6 +53,9 @@ router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
 module.exports = router;
 //-----chat------------------------------
 router.post("/chat", isLoggedIn, PostService.createChatMessage);
+router.get("/allChat", isLoggedIn, PostService.readChatMessage);
+router.delete("/chat/delete", isLoggedIn, PostService.deleteAllChatMessages);
+
 //"https://Localhost:3000/post?idx=3000" => req.qurey.idx = 3000;
 
 //"https://Localhost:3000/post/35" => req.params.postId = 35

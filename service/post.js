@@ -3,10 +3,10 @@ const User = require("../models/user");
 const Comment = require("../models/comment");
 const ReComment = require("../models/recomment");
 const Image = require("../models/image");
+const Chat = require("../models/chat");
 const fs = require("fs");
 const path = require("path");
 const { Op } = require("sequelize");
-const Chat = require("../models/chat");
 
 module.exports = class PostService {
   static async imageUpload(req, res) {
@@ -625,6 +625,33 @@ module.exports = class PostService {
         });
         res.status(201).json(fullChatMessage);
       }
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  //get Chat-------------------------------------
+  static async readChatMessage(req, res, next) {
+    try {
+      const messages = await Chat.findAll();
+
+      res.status(200).json(messages);
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  //delete Chat-----------------------------------
+  static async deleteAllChatMessages(req, res, next) {
+    try {
+      await Chat.destroy({
+        where: {}, // 모든 레코드 대상
+        truncate: true, // 테이블을 Truncate하여 모든 데이터를 삭제
+      });
+
+      const messages = await Chat.findAll();
+
+      res.status(200).json(messages);
     } catch (error) {
       console.error(error);
       next(error);
