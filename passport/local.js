@@ -1,4 +1,4 @@
-const passport = require("passport");
+/* const passport = require("passport");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const passportLocal = require("passport-local");
@@ -35,3 +35,4 @@ const passportVerify = async (email, password, done) => {
 module.exports = () => {
   passport.use("local", new LocalStrategy(passportConfig, passportVerify));
 };
+ */

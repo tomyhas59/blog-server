@@ -1,4 +1,4 @@
-const passport = require("passport");
+/* const passport = require("passport");
 const local = require("./local");
 const User = require("../models/user");
 
@@ -21,3 +21,4 @@ module.exports = () => {
   });
   local();
 };
+ */

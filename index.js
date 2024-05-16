@@ -8,9 +8,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
 const dotenv = require("dotenv");
-const passportConfig = require("./passport");
 const http = require("http");
-const https = require("https");
 const socketIO = require("socket.io");
 
 // Middleware-------------------------------
@@ -105,8 +103,6 @@ db.sequelize
 
 app.use("/user", userRouter);
 app.use("/post", postRouter);
-
-passportConfig();
 
 const serverInstance = http.createServer(app);
 
