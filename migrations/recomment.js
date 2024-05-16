@@ -40,7 +40,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "Comments", // db.Comment 테이블과 연결됨
+          model: "comments", // db.Comment 테이블과 연결됨
           key: "id",
         },
         onUpdate: "CASCADE", //참조하는 레코드가 업데이트될 때 해당 레코드와 연결된 모든 레코드도 업데이트
@@ -60,7 +60,7 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable("ReComments");
+    await queryInterface.dropTable("Recomments");
   },
 };
 
