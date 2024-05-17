@@ -12,7 +12,7 @@ exports.isLoggedIn = (req, res, next) => {
         return res.status(401).send("유효하지 않은 토큰입니다.");
       } else {
         req.user = decoded;
-        console.log(decoded); // 디코딩된 페이로드를 req.user에 저장하여 다음 핸들러에서 사용할 수 있도록 합니다.
+        console.log(decoded); // 디코딩된 페이로드를 req.user에 저장
         next();
       }
     });

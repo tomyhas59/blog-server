@@ -248,9 +248,10 @@ module.exports = class PostService {
       const whereCondition = {};
 
       if (searchOption === "author") {
-        whereCondition["$User.nickname$"] = {
-          [Op.like]: `%${searchText}%`,
-        };
+        whereCondition["$User.nickname$"] /*User 모델의 nickname 필드 참조 */ =
+          {
+            [Op.like]: `%${searchText}%`, //searchText가 포함된 모든 항목 검색
+          };
       } else if (searchOption === "content") {
         whereCondition.content = {
           [Op.like]: `%${searchText}%`,
