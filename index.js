@@ -156,7 +156,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const port = process.env.NODE_ENV === "production" ? 442 : 3075;
+const port = process.env.NODE_ENV === "production" ? 443 : 3075;
 
 serverInstance.listen(port, () => {
   console.log(`server running on port ${port}`);
