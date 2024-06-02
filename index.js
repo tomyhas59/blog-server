@@ -61,45 +61,6 @@ db.sequelize
     console.log("db 연결 성공");
   })
   .catch(console.error);
-//---------jwt----------------------------
-// app.post("/jwtsetcookie", (req, res, next) => {
-//   try {
-//     const token = jwt.sign(
-//       { email: req.body.email },
-//       process.env.SECRET_JWT_TOKEN_KEY
-//     );
-//     // res.cookie(
-//     //   "token" /*cookie의 이름*/,
-//     //   {
-//     //     token: req.email,
-//     //     expired: 5 * 60000, //생명 주기, front한테 요청
-//     //   },
-//     //   {
-//     //     maxAge: 5 * 60000, //생명주기, backend에서 요청
-//     //     httpOnly: true, //웹 서버에서만 사용 가능
-//     //     //signed: true, //암호화된 쿠키, cookieParser()안에 암호화 키 등록
-//     //     secure: false, //https에서만 사용 가능
-//     //   }
-//     // );
-//     res.header("LYH", token);
-//     res.cookie("access_token", token, { httpOnly: true });
-//     res.send({ message: "success" });
-//   } catch (err) {
-//     console.log(err);
-//     next(err);
-//   }
-// });
-// app.get("/jwtshowcookie", (req, res) => {
-//   const token = req.cookies.access_token;
-//   res.send(token);
-//   console.log(jwt.verify(token, process.env.SECRET_JWT_TOKEN_KEY)); //verify 복호화키 검사
-//   console.log(jwt.decode(token)); //decode 복호화 키 없이 해석
-//   // res.send(req.signedCookies.token); // signed: true 일 때
-// });
-// app.post("/clearcookie", (req, res) => {
-//   res.clearCookie("token");
-//   res.send({ message: "성공" });
-// });
 
 app.use("/user", userRouter);
 app.use("/post", postRouter);

@@ -1,18 +1,18 @@
 const jwt = require("jsonwebtoken");
 
 exports.isLoggedIn = (req, res, next) => {
-  if (!req.cookies.access_token) {
+  if (!req.cookies.accessToken) {
     return res.status(401).send("헤더에 쿠키가 없습니다.");
   }
-  const tokenCookie = req.cookies.access_token;
+  const tokenCookie = req.cookies.accessToken;
 
   if (tokenCookie) {
     jwt.verify(tokenCookie, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         return res.status(401).send("유효하지 않은 토큰입니다.");
       } else {
-        req.user = decoded;
-        console.log(decoded); // 디코딩된 페이로드를 req.user에 저장
+        req.user = decoded; // 디코딩된 페이로드를 req.user에 저장
+        console.log(decoded);
         next();
       }
     });
@@ -22,7 +22,7 @@ exports.isLoggedIn = (req, res, next) => {
 };
 
 exports.isNotLoggedIn = (req, res, next) => {
-  const tokenCookie = req.cookies.access_token;
+  const tokenCookie = req.cookies.accessToken;
   if (!tokenCookie) {
     next();
   } else {

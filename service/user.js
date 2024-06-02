@@ -58,10 +58,15 @@ module.exports = class UserService {
         return res.status(401).send("비밀번호가 틀렸습니다.");
       }
 
-      const token = jwt.sign(
+      const accessToken = jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "15m" }
+      );
+      const refreshToken = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
       );
 
       const cookieOptions =
@@ -69,55 +74,72 @@ module.exports = class UserService {
           ? { httpOnly: true, secure: true, sameSite: "None" }
           : { httpOnly: true, sameSite: "Lax" };
 
-      res.cookie("access_token", token, cookieOptions);
+      res.cookie("accessToken", accessToken, cookieOptions);
+      res.cookie("refreshToken", refreshToken, cookieOptions);
 
       res.status(200).json({
         nickname: user.nickname,
         id: user.id,
         email: user.email,
-        token,
+        accessToken,
+        refreshToken,
       });
     } catch (err) {
       console.error(err);
       next(err);
     }
   }
-  //----------------------------------------------------------------------
+  //-------------------------------------------------------------------
+  static async refreshToken(req, res, next) {
+    const refreshToken = req.cookies.refreshToken;
 
-  /*  static async main(req, res, next) {
-    console.log(req.headers); //headers 안에 쿠키 있음
+    if (!refreshToken) return res.sendStatus(401);
+
     try {
-      if (req.user) {
-        const fullUserWithoutPassword = await User.findOne({
-          where: { id: req.user.id },
-          //attributes : ["id", "nickname", "email"], <- 이것만 가져오겠다
-          attributes: {
-            exclude: ["password"],
-          },
-          include: [
-            {
-              model: Post,
-              attributes: ["id"],
-            },
-            {
-              model: Comment,
-              attributes: ["id"],
-            },
-          ],
-        });
-        res.status(200).json(fullUserWithoutPassword);
-      } else {
-        res.status(200).json(null);
+      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+      const user = await User.findOne({ where: { id: decoded.id } });
+
+      if (!user) {
+        return res.status(401).send("유효하지 않은 리프레시 토큰");
       }
-    } catch (error) {
-      console.error(error);
-      next(error);
+
+      const newAccessToken = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      res.cookie("accessToken", newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      });
+
+      res.status(200).json({ accessToken: newAccessToken });
+    } catch (err) {
+      console.error(err);
+      res.status(401).send("유효하지 않은 리프레시 토큰");
     }
-  } */
+  }
+  //----------------------------------------------------
+  static async setUser(req, res, next) {
+    try {
+      const user = await User.findOne({
+        //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
+        where: { email: req.user.email },
+        attributes: ["id", "nickname", "email", "password"],
+      });
+      res.json(user);
+    } catch (err) {
+      console.error(err);
+      next(err);
+    }
+  }
   //----------------------------------------------------------------------
   static async logOut(req, res, next) {
     try {
-      res.clearCookie("access_token"); // access_token 쿠키 삭제
+      res.clearCookie("accessToken"); // access_token 쿠키 삭제
+      res.clearCookie("refreshToken"); // refresh_token 쿠키 삭제
       res.send("ok");
     } catch (err) {
       console.error(err);
