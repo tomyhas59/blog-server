@@ -138,8 +138,13 @@ module.exports = class UserService {
   //----------------------------------------------------------------------
   static async logOut(req, res, next) {
     try {
-      res.clearCookie("accessToken"); // access_token 쿠키 삭제
-      res.clearCookie("refreshToken"); // refresh_token 쿠키 삭제
+      const cookieOptions =
+        process.env.NODE_ENV === "production"
+          ? { httpOnly: true, secure: true, sameSite: "None" }
+          : { httpOnly: true, sameSite: "Lax" };
+
+      res.clearCookie("accessToken", cookieOptions);
+      res.clearCookie("refreshToken", cookieOptions);
       res.send("ok");
     } catch (err) {
       console.error(err);
