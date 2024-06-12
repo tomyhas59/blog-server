@@ -15,7 +15,7 @@ module.exports = class ReComment extends Sequelize.Model {
         tableName: "recomments",
         charset: "utf8",
         collate: "utf8_general_ci", //한글 저장
-        timestamps: true, //updateAt, createAt 생성
+        timestamps: true, //updatedAt, createdAt 생성
         sequelize,
       }
     );

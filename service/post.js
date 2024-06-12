@@ -205,9 +205,7 @@ module.exports = class PostService {
   static async readAll(req, res, next) {
     try {
       const posts = await Post.findAll({
-        // where: { userIdx: req.uer.id },내 것만 가져오기 *로그인 하면 req.user.id 생김
         limit: 10,
-        //  offset: 0, //0~10  0에서 limit 만큼 가져와라
         include: [
           { model: User, attributes: ["id", "email", "nickname"] },
           { model: Image },
@@ -222,16 +220,21 @@ module.exports = class PostService {
               {
                 model: ReComment,
                 include: [{ model: User, attributes: ["id", "nickname"] }],
-                attributes: ["id", "content"],
+                attributes: ["id", "content", "createdAt"],
               },
               {
-                model: User, //댓글 작성자
+                model: User, // 댓글 작성자
                 attributes: ["id", "nickname"],
               },
             ],
+            attributes: ["id", "content", "createdAt"],
           },
         ],
-        order: [["createdAt", "DESC"]], //DESC 내림차순 ASC 오름차순
+        order: [
+          ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
+          [Comment, "createdAt", "ASC"], // 댓글을 오름차순으로 정렬
+          [Comment, ReComment, "createdAt", "ASC"], // 대댓글을 오름차순으로 정렬
+        ],
       });
       res.status(200).json(posts);
     } catch (error) {
@@ -239,6 +242,7 @@ module.exports = class PostService {
       next(error);
     }
   }
+
   //----------------------------------------------------------------------
 
   static async search(req, res, next) {

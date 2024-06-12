@@ -25,7 +25,7 @@ module.exports = class User extends Sequelize.Model {
       {
         modelName: "User",
         tableName: "users",
-        timestamps: true, //updateAt, createAt 생성
+        timestamps: true, //updatedAt, createdAt 생성
         charset: "utf8",
         collate: "utf8_general_ci", //한글 저장
         sequelize,

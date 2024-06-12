@@ -18,7 +18,7 @@ module.exports = class Chat extends Sequelize.Model {
       {
         modelName: "Chat",
         tableName: "chats",
-        timestamps: true, //updateAt, createAt 생성
+        timestamps: true, //updatedAt, createdAt 생성
         charset: "utf8mb4",
         collate: "utf8mb4_general_ci",
         sequelize,

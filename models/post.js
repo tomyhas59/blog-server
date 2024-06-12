@@ -15,7 +15,7 @@ module.exports = class Post extends Sequelize.Model {
         tableName: "posts",
         charset: "utf8mb4",
         collate: "utf8mb4_general_ci", //한글, 이모티콘 저장
-        timestamps: true, //updateAt, createAt 생성
+        timestamps: true, //updatedAt, createdAt 생성
         sequelize,
       }
     );
