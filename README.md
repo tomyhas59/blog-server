@@ -1,10 +1,10 @@
 # 개인 블로그 서버
 
-개인 블로그 서버. 
-Express를 사용하여 구축된 Node.js 서버 애플리케이션. 
-사용자 인증, jwt, 실시간 통신(socket.io 지원)을 포함. 
-Sequelize를 ORM으로 사용
-PostgreSQL 데이터베이스 지원.
+- 개인 블로그 서버. 
+- Express를 사용하여 구축된 Node.js 서버 애플리케이션. 
+- 사용자 인증, jwt, 실시간 통신(socket.io 지원)을 포함. 
+- Sequelize를 ORM으로 사용
+- PostgreSQL 데이터베이스 지원.
 
 ## 구현 기능
 
