@@ -6,5 +6,7 @@ const UserService = require("../service/user");
 router.post("/signup", UserService.signUp);
 router.post("/login", isNotLoggedIn, UserService.logIn);
 router.post("/logout", isLoggedIn, UserService.logOut);
+router.post("/refreshToken", UserService.refreshToken);
+router.get("/setUser", isLoggedIn, UserService.setUser);
 
 module.exports = router;
