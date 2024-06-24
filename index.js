@@ -31,8 +31,6 @@ app.use(
   })
 );
 
-app.use(cookieParser());
-passportConfig();
 // image 저장 경로 설정----------------------------
 app.use("/", express.static(path.join(__dirname, "uploads")));
 
@@ -62,6 +60,8 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cookieParser());
+passportConfig();
 //sequelize-----------------------------------
 dotenv.config();
 db.sequelize
