@@ -1,8 +1,8 @@
-/* const passport = require("passport");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const passportLocal = require("passport-local");
 const LocalStrategy = passportLocal.Strategy;
+const passport = require("passport");
 
 const passportConfig = {
   usernameField: "email", //req.body.email 과 같음
@@ -35,4 +35,3 @@ const passportVerify = async (email, password, done) => {
 module.exports = () => {
   passport.use("local", new LocalStrategy(passportConfig, passportVerify));
 };
- */

@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
-const jwt = require("jsonwebtoken");
+const passport = require("passport");
 
 module.exports = class UserService {
   static async signUp(req, res, next) {
@@ -37,99 +37,40 @@ module.exports = class UserService {
   //----------------------------------------------------------------------
 
   static async logIn(req, res, next) {
-    try {
-      const user = await User.findOne({
-        where: {
-          email: req.body.email,
-        },
-        attributes: ["id", "nickname", "email", "password"],
-      });
-
-      if (!user) {
-        return res.status(401).send("가입되지 않은 이메일입니다.");
+    passport.authenticate("local", (err, user, message) => {
+      if (err) {
+        console.log(err);
+        return next(err);
       }
-
-      const isValidPassword = await bcrypt.compare(
-        req.body.password,
-        user.password
-      );
-
-      if (!isValidPassword) {
-        return res.status(401).send("비밀번호가 틀렸습니다.");
+      if (message) {
+        return res.status(401).send(message);
       }
-
-      const accessToken = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "15m" }
-      );
-      const refreshToken = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
-      const cookieOptions =
-        process.env.NODE_ENV === "production"
-          ? { httpOnly: true, secure: true, sameSite: "None" }
-          : { httpOnly: true, sameSite: "Lax" };
-
-      res.cookie("accessToken", accessToken, cookieOptions);
-      res.cookie("refreshToken", refreshToken, cookieOptions);
-
-      res.status(200).json({
-        nickname: user.nickname,
-        id: user.id,
-        email: user.email,
-        accessToken,
-        refreshToken,
+      return req.login(user, async (loginErr) => {
+        if (loginErr) {
+          console.error(err);
+          return next(err);
+        }
+        const fullUser = await User.findOne({
+          where: { id: user.id },
+          attributes: {
+            exclude: ["password"],
+          },
+        });
+        return res.status(200).json(fullUser);
       });
-    } catch (err) {
-      console.error(err);
-      next(err);
-    }
+    })(req, res, next);
   }
-  //-------------------------------------------------------------------
-  static async refreshToken(req, res, next) {
-    const refreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) return res.sendStatus(401);
-
-    try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-      const user = await User.findOne({ where: { id: decoded.id } });
-
-      if (!user) {
-        return res.status(401).send("유효하지 않은 리프레시 토큰");
-      }
-
-      const newAccessToken = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "15m" }
-      );
-
-      res.cookie("accessToken", newAccessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-      });
-
-      res.status(200).json({ accessToken: newAccessToken });
-    } catch (err) {
-      console.error(err);
-      res.status(401).send("유효하지 않은 리프레시 토큰");
-    }
-  }
   //----------------------------------------------------
   static async setUser(req, res, next) {
     try {
-      const user = await User.findOne({
+      const user = req.user;
+      const dbUser = await User.findOne({
         //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
-        where: { email: req.user.email },
+        where: { id: user.id },
         attributes: ["id", "nickname", "email", "password"],
       });
-      res.json(user);
+      res.json(dbUser);
     } catch (err) {
       console.error(err);
       next(err);
@@ -138,14 +79,12 @@ module.exports = class UserService {
   //----------------------------------------------------------------------
   static async logOut(req, res, next) {
     try {
-      const cookieOptions =
-        process.env.NODE_ENV === "production"
-          ? { httpOnly: true, secure: true, sameSite: "None" }
-          : { httpOnly: true, sameSite: "Lax" };
-
-      res.clearCookie("accessToken", cookieOptions);
-      res.clearCookie("refreshToken", cookieOptions);
-      res.send("ok");
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).send("로그아웃 실패");
+        }
+        res.send("ok");
+      });
     } catch (err) {
       console.error(err);
       next(err);
