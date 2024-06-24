@@ -85,6 +85,7 @@ module.exports = class UserService {
           return res.status(500).send("로그아웃 실패");
         }
         res.send("ok");
+        res.clearCookie("connect.sid");
       });
     } catch (err) {
       console.error(err);

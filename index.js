@@ -50,8 +50,8 @@ app.use(
     saveUninitialized: false, //req 메시지가 들어왔을 때 session에 아무런 작업이 이뤄지지 않을 때 상황
     //보통은 false, 만약 true 시 아무 내용이 없는 session 저장될 수 있음
     cookie: {
-      secure: process.env.NODE_ENV === "production" ? true : false,
-      httpOnly: process.env.NODE_ENV === "production" ? true : false,
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
       maxAge: 5 * 60000,
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     },
