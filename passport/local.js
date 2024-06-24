@@ -15,7 +15,7 @@ const passportVerify = async (email, password, done) => {
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return done(null, false, {
-        messege: "가입된 이메일이 없습니다",
+        message: "가입된 이메일이 없습니다",
       });
     }
 

@@ -65,12 +65,12 @@ module.exports = class UserService {
   static async logOut(req, res, next) {
     try {
       req.logout();
+      res.clearCookie("connect.sid");
       req.session.destroy((err) => {
         if (err) {
           return res.status(500).send("로그아웃 실패");
         }
         res.send("ok");
-        res.clearCookie("connect.sid");
       });
     } catch (err) {
       console.error(err);
