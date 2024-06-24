@@ -79,6 +79,7 @@ module.exports = class UserService {
   //----------------------------------------------------------------------
   static async logOut(req, res, next) {
     try {
+      req.logout();
       req.session.destroy((err) => {
         if (err) {
           return res.status(500).send("로그아웃 실패");

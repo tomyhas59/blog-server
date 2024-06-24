@@ -51,7 +51,7 @@ app.use(
     //보통은 false, 만약 true 시 아무 내용이 없는 session 저장될 수 있음
     cookie: {
       secure: process.env.NODE_ENV === "production" ? true : false,
-      httpOnly: true,
+      httpOnly: process.env.NODE_ENV === "production" ? true : false,
       maxAge: 5 * 60000,
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     },
