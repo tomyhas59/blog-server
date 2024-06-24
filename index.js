@@ -52,13 +52,15 @@ app.use(
     },
   })
 );
+
+passportConfig();
+
 //passport----위치는 session 아래로----------------------------------
 
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(cookieParser(process.env.SESSION_SECRET));
 
-passportConfig();
 //sequelize-----------------------------------
 dotenv.config();
 db.sequelize
