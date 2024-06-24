@@ -8,6 +8,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
 const dotenv = require("dotenv");
+const https = require("https");
 const http = require("http");
 const socketIO = require("socket.io");
 const session = require("express-session");
@@ -73,7 +74,10 @@ db.sequelize
 app.use("/user", userRouter);
 app.use("/post", postRouter);
 
-const serverInstance = http.createServer(app);
+const serverInstance =
+  process.env.NODE_ENV === "production"
+    ? https.createServer(app)
+    : http.createServer(app);
 
 // Socket
 
