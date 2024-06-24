@@ -74,10 +74,7 @@ db.sequelize
 app.use("/user", userRouter);
 app.use("/post", postRouter);
 
-const serverInstance =
-  process.env.NODE_ENV === "production"
-    ? https.createServer(app)
-    : http.createServer(app);
+const serverInstance = http.createServer(app);
 
 // Socket
 
