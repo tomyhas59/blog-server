@@ -31,27 +31,29 @@ app.use(
 // image 저장 경로 설정----------------------------
 app.use("/", express.static(path.join(__dirname, "uploads")));
 
+//session------------------------------------
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET, //암호키 이름
+    resave: false, //세션이 값이 똑같으면 다시 저장 안 함
+    saveUninitialized: true, //req 메시지가 들어왔을 때 session에 아무런 작업이 이뤄지지 않을 때 상황
+    //보통은 false, 만약 true 시 아무 내용이 없는 session 저장될 수 있음
+    cookie: {
+      domain: "https://tomyhasblog.vercel.app",
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 5 * 60000,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
+    },
+  })
+);
+
 app.use(
   morgan("dev"), //로그를 찍어줌 ,종류 dev(개발용), combined(배포용), common, short, tiny
   express.json(), //json req.body 데이터 읽는 것 허용
   express.urlencoded({ extended: false }) //url에 있는 정보를 express 내에 있는 해석툴로 읽을 것이냐
   // extended: false (nodeJS에 내장된 qureystring 모듈로 해석)
   // extended: true (추가로 설치하여 외부 해석툴 qs로 해석)
-);
-//session------------------------------------
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET, //암호키 이름
-    resave: false, //세션이 값이 똑같으면 다시 저장 안 함
-    saveUninitialized: false, //req 메시지가 들어왔을 때 session에 아무런 작업이 이뤄지지 않을 때 상황
-    //보통은 false, 만약 true 시 아무 내용이 없는 session 저장될 수 있음
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 5 * 60000,
-      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-    },
-  })
 );
 
 passportConfig();
