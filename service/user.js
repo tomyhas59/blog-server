@@ -61,21 +61,6 @@ module.exports = class UserService {
     })(req, res, next);
   }
 
-  //----------------------------------------------------
-  static async setUser(req, res, next) {
-    try {
-      const user = req.user;
-      const dbUser = await User.findOne({
-        //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
-        where: { id: user.id },
-        attributes: ["id", "nickname", "email", "password"],
-      });
-      res.json(dbUser);
-    } catch (err) {
-      console.error(err);
-      next(err);
-    }
-  }
   //----------------------------------------------------------------------
   static async logOut(req, res, next) {
     try {

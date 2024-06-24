@@ -17,7 +17,7 @@ const passport = require("passport");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
+passportConfig();
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -58,7 +58,6 @@ app.use(
   })
 );
 //passport----위치는 session 아래로----------------------------------
-passportConfig();
 app.use(passport.initialize());
 app.use(passport.session());
 //sequelize-----------------------------------
