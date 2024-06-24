@@ -24,6 +24,7 @@ app.use(
         ? "https://tomyhasblog.vercel.app"
         : "http://localhost:3000",
     credentials: true, //쿠키 보내는 코드, 프론트의 saga/index에서 axios.defaults.withCredentials = true 해줘야 쿠키 받음
+    methods: ["GET", "POST"],
   })
 );
 
