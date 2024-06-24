@@ -12,12 +12,8 @@ const https = require("https");
 const http = require("http");
 const socketIO = require("socket.io");
 const session = require("express-session");
-const bodyParser = require("body-parser");
 const passportConfig = require("./passport");
 const passport = require("passport");
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
 
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
