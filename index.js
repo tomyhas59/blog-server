@@ -10,10 +10,6 @@ const db = require("./models");
 const dotenv = require("dotenv");
 const http = require("http");
 const socketIO = require("socket.io");
-const passport = require("passport");
-const session = require("express-session");
-const passportConfig = require("./passport");
-
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -39,41 +35,22 @@ app.use(
   // extended: false (nodeJS에 내장된 qureystring 모듈로 해석)
   // extended: true (추가로 설치하여 외부 해석툴 qs로 해석)
 );
-
-// 모든 응답에 'Access-Control-Allow-Credentials' 헤더 추가
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Origin",
-    process.env.NODE_ENV === "production"
-      ? "https://tomyhasblog.vercel.app"
-      : "http://localhost:3000"
-  );
-  next();
-});
-
 //session------------------------------------
-app.use(
+/* app.use(
   session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    proxy: process.env.NODE_ENV === "production",
+    secret: "node-secret", //암호키 이름
+    resave: false, //세션이 값이 똑같으면 다시 저장 안 함
+    saveUninitialized: false, //req 메시지가 들어왔을 때 session에 아무런 작업이 이뤄지지 않을 때 상황
+    //보통은 false, 만약 true 시 아무 내용이 없는 session 저장될 수 있음
     cookie: {
-      domain: process.env.NODE_ENV === "production" ? ".koyeb.app" : undefined,
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 5 * 60000,
-      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     },
   })
-);
-
+); */
 //passport----위치는 session 아래로----------------------------------
-passportConfig();
-app.use(passport.initialize());
-app.use(passport.session());
+/* app.use(passport.initialize());
+app.use(passport.session()); */
 //sequelize-----------------------------------
 dotenv.config();
 db.sequelize
