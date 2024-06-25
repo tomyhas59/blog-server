@@ -88,16 +88,20 @@ const httpServer = http.createServer(app);
 const httpsServer = https.createServer(app);
 
 // Socket
-const io = socketIO(httpServer, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://tomyhasblog.vercel.app"
-        : "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+const io = socketIO(
+  process.env.NODE_ENV === "production" ? httpsServer : httpServer,
+  {
+    cors: {
+      origin:
+        process.env.NODE_ENV === "production"
+          ? "https://tomyhasblog.vercel.app"
+          : "http://localhost:3000",
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+  }
+);
+
 const connectedUsers = new Map();
 io.on("connection", (socket) => {
   socket.on("loginUser", (userInfo) => {
