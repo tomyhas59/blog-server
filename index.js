@@ -49,12 +49,12 @@ app.use((req, res, next) => {
 //session------------------------------------
 app.use(
   session({
-    domain: "https://tomyhasblog.vercel.app",
-    path: "/",
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
+      domain: "https://tomyhasblog.vercel.app",
+      path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 5 * 60000,
