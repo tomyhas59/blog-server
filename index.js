@@ -85,22 +85,18 @@ app.use("/user", userRouter);
 app.use("/post", postRouter);
 
 const httpServer = http.createServer(app);
-const httpsServer = https.createServer(app);
 
 // Socket
-const io = socketIO(
-  process.env.NODE_ENV === "production" ? httpsServer : httpServer,
-  {
-    cors: {
-      origin:
-        process.env.NODE_ENV === "production"
-          ? "https://tomyhasblog.vercel.app"
-          : "http://localhost:3000",
-      methods: ["GET", "POST"],
-      credentials: true,
-    },
-  }
-);
+const io = socketIO(httpServer, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://tomyhasblog.vercel.app"
+        : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 const connectedUsers = new Map();
 io.on("connection", (socket) => {
@@ -135,10 +131,6 @@ io.on("connection", (socket) => {
 });
 const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
 
-process.env.NODE_ENV === "production"
-  ? httpsServer.listen(port, () => {
-      console.log(`server running on port ${port}`);
-    })
-  : httpServer.listen(port, () => {
-      console.log(`server running on port ${port}`);
-    });
+httpServer.listen(port, () => {
+  console.log(`server running on port ${port}`);
+});
