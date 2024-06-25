@@ -49,6 +49,8 @@ app.use((req, res, next) => {
 //session------------------------------------
 app.use(
   session({
+    domain: "https://tomyhasblog.vercel.app",
+    path: "/",
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
