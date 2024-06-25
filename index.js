@@ -14,7 +14,6 @@ const passport = require("passport");
 const session = require("express-session");
 const passportConfig = require("./passport");
 
-dotenv.config();
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -52,7 +51,6 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    proxy: process.env.NODE_ENV === "production",
     saveUninitialized: false,
     cookie: {
       domain: "tomyhasblog.vercel.app",
@@ -70,7 +68,7 @@ passportConfig();
 app.use(passport.initialize());
 app.use(passport.session());
 //sequelize-----------------------------------
-
+dotenv.config();
 db.sequelize
   .sync()
   .then(() => {
