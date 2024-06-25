@@ -55,7 +55,7 @@ app.use(
     proxy: process.env.NODE_ENV === "production",
     saveUninitialized: false,
     cookie: {
-      domain: "quarrelsome-laura-tomyhas59-09167dc6.koyeb.app",
+      domain: ".app",
       path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
