@@ -43,6 +43,12 @@ app.use(
 // 모든 응답에 'Access-Control-Allow-Credentials' 헤더 추가
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Origin",
+    process.env.NODE_ENV === "production"
+      ? "https://tomyhasblog.vercel.app"
+      : "http://localhost:3000"
+  );
   next();
 });
 
@@ -54,7 +60,7 @@ app.use(
     saveUninitialized: false,
     proxy: process.env.NODE_ENV === "production",
     cookie: {
-      domain: ".app",
+      domain: process.env.NODE_ENV === "production" ? ".koyeb.app" : undefined,
       path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
