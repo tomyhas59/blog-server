@@ -11,6 +11,7 @@ const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
 
 const http = require("http");
+const https = require("https");
 const socketIO = require("socket.io");
 const passport = require("passport");
 const session = require("express-session");
@@ -82,7 +83,12 @@ db.sequelize
   .catch(console.error);
 app.use("/user", userRouter);
 app.use("/post", postRouter);
-const serverInstance = http.createServer(app);
+
+const serverInstance =
+  process.env.NODE_ENV === "production"
+    ? https.createServer(app)
+    : http.createServer(app);
+
 // Socket
 const io = socketIO(serverInstance, {
   cors: {
