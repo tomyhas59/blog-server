@@ -55,7 +55,7 @@ app.use(
     proxy: process.env.NODE_ENV === "production",
     saveUninitialized: false,
     cookie: {
-      domain: "tomyhasblog.vercel.app",
+      domain: ".koyeb.app",
       path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
