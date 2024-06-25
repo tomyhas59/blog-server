@@ -1,5 +1,3 @@
-const dotenv = require("dotenv");
-dotenv.config();
 const postRouter = require("./routes/post");
 const userRouter = require("./routes/user");
 const express = require("express");
@@ -9,14 +7,14 @@ const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
-
+const dotenv = require("dotenv");
 const http = require("http");
-const https = require("https");
 const socketIO = require("socket.io");
 const passport = require("passport");
 const session = require("express-session");
 const passportConfig = require("./passport");
 
+dotenv.config();
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -56,10 +54,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      domain:
-        process.env.NODE_ENV === "production"
-          ? "tomyhasblog.vercel.app"
-          : undefined,
+      domain: "tomyhasblog.vercel.app",
       path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
@@ -83,11 +78,9 @@ db.sequelize
   .catch(console.error);
 app.use("/user", userRouter);
 app.use("/post", postRouter);
-
-const httpServer = http.createServer(app);
-
+const serverInstance = http.createServer(app);
 // Socket
-const io = socketIO(httpServer, {
+const io = socketIO(serverInstance, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
@@ -97,7 +90,6 @@ const io = socketIO(httpServer, {
     credentials: true,
   },
 });
-
 const connectedUsers = new Map();
 io.on("connection", (socket) => {
   socket.on("loginUser", (userInfo) => {
@@ -130,7 +122,6 @@ io.on("connection", (socket) => {
   });
 });
 const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
-
-httpServer.listen(port, () => {
+serverInstance.listen(port, () => {
   console.log(`server running on port ${port}`);
 });
