@@ -1,3 +1,5 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const postRouter = require("./routes/post");
 const userRouter = require("./routes/user");
 const express = require("express");
@@ -7,7 +9,7 @@ const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser"); //middleware
 const db = require("./models");
-const dotenv = require("dotenv");
+
 const http = require("http");
 const socketIO = require("socket.io");
 const passport = require("passport");
@@ -53,7 +55,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      domain: "tomyhasblog.vercel.app",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? "tomyhasblog.vercel.app"
+          : undefined,
       path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
@@ -68,7 +73,7 @@ passportConfig();
 app.use(passport.initialize());
 app.use(passport.session());
 //sequelize-----------------------------------
-dotenv.config();
+
 db.sequelize
   .sync()
   .then(() => {
