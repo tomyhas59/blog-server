@@ -84,13 +84,11 @@ db.sequelize
 app.use("/user", userRouter);
 app.use("/post", postRouter);
 
-const serverInstance =
-  process.env.NODE_ENV === "production"
-    ? https.createServer(app)
-    : http.createServer(app);
+const httpServer = http.createServer(app);
+const httpsServer = https.createServer(app);
 
 // Socket
-const io = socketIO(serverInstance, {
+const io = socketIO(httpServer, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
@@ -132,6 +130,11 @@ io.on("connection", (socket) => {
   });
 });
 const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
-serverInstance.listen(port, () => {
-  console.log(`server running on port ${port}`);
-});
+
+process.env.NODE_ENV === "production"
+  ? httpsServer.listen(port, () => {
+      console.log(`server running on port ${port}`);
+    })
+  : httpServer.listen(port, () => {
+      console.log(`server running on port ${port}`);
+    });
