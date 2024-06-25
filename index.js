@@ -52,8 +52,9 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    proxy: process.env.NODE_ENV === "production",
     cookie: {
+      domain: ".app",
+      path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 5 * 60000,
