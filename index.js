@@ -53,8 +53,6 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      domain: "tomyhasblog.vercel.app",
-      path: "/",
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 5 * 60000,
