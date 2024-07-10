@@ -41,7 +41,7 @@ module.exports = class UserService {
         where: {
           email: req.body.email,
         },
-        attributes: ["id", "nickname", "email", "password"],
+        attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
 
       if (!user) {
@@ -80,6 +80,7 @@ module.exports = class UserService {
         nickname: user.nickname,
         id: user.id,
         email: user.email,
+        createdAt: user.createdAt,
         accessToken,
         refreshToken,
       });
@@ -126,7 +127,7 @@ module.exports = class UserService {
       const user = await User.findOne({
         //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
         where: { email: req.user.email },
-        attributes: ["id", "nickname", "email", "password"],
+        attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
       res.json(user);
     } catch (err) {
