@@ -242,6 +242,77 @@ module.exports = class PostService {
       next(error);
     }
   }
+  //----------------------------------------------------------------------
+
+  static async getUserPosts(req, res, next) {
+    try {
+      const userId = req.query.userId;
+
+      if (!userId) {
+        return res
+          .status(400)
+          .json({ error: "UserId query parameter is required" });
+      }
+
+      const posts = await Post.findAll({
+        where: {
+          userIdx: userId,
+        },
+        include: [{ model: User, attributes: ["id", "email", "nickname"] }],
+        order: [
+          ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
+        ],
+      });
+      res.status(200).json(posts);
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+
+  //----------------------------------------------------------------------
+
+  static async getUserComments(req, res, next) {
+    try {
+      const userId = req.query.userId;
+
+      if (!userId) {
+        return res
+          .status(400)
+          .json({ error: "UserId query parameter is required" });
+      }
+
+      const comments = await Comment.findAll({
+        where: {
+          UserId: userId,
+        },
+        include: [{ model: Post, attributes: ["id"] }],
+        order: [
+          ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
+        ],
+      });
+
+      const reComments = await ReComment.findAll({
+        where: {
+          UserId: userId,
+        },
+        include: [{ model: Post, attributes: ["id"] }],
+        order: [
+          ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
+        ],
+      });
+
+      const allComments = {
+        comments: comments,
+        reComments: reComments,
+      };
+
+      res.status(200).json(allComments);
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
 
   //----------------------------------------------------------------------
 
@@ -260,7 +331,7 @@ module.exports = class PostService {
         whereCondition.content = {
           [Op.like]: `%${searchText}%`,
         };
-      } else if (searchOption === "both") {
+      } else if (searchOption === "all") {
         whereCondition[Op.or] = [
           {
             content: {
@@ -269,6 +340,16 @@ module.exports = class PostService {
           },
           {
             "$User.nickname$": {
+              [Op.like]: `%${searchText}%`,
+            },
+          },
+          {
+            "$Comments.content$": {
+              [Op.like]: `%${searchText}%`,
+            },
+          },
+          {
+            "$Comments.ReComments.content$": {
               [Op.like]: `%${searchText}%`,
             },
           },
@@ -366,6 +447,19 @@ module.exports = class PostService {
   static async delete(req, res, next) {
     try {
       const postId = req.params.postId;
+
+      await Comment.destroy({
+        where: {
+          PostId: postId,
+        },
+      });
+
+      await ReComment.destroy({
+        where: {
+          PostId: postId,
+        },
+      });
+
       // 이미지 파일 삭제 로직
       const images = await Image.findAll({
         where: {
@@ -393,10 +487,7 @@ module.exports = class PostService {
         },
       });
       Post.destroy({
-        where: {
-          id: postId,
-          /*    userIdx: req.user.id, */
-        },
+        where: {},
       });
 
       res.status(200).json({ PostId: parseInt(postId, 10) }); //saga의 result 응답데이터, reducer의 action.data.PostId
@@ -450,6 +541,12 @@ module.exports = class PostService {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
+
+      await ReComment.destroy({
+        where: {
+          CommentId: commentId,
+        },
+      });
 
       await Comment.destroy({
         where: { id: commentId /*  UserId: req.user.id */ },

@@ -13,6 +13,8 @@ router.post(
   upload.array("image"),
   PostService.imageUpload
 );
+router.get("/", isLoggedIn, PostService.getUserPosts);
+router.get("/comment", isLoggedIn, PostService.getUserComments);
 router.post("/", isLoggedIn, upload.none(), PostService.create);
 router.put("/:postId", isLoggedIn, upload.none(), PostService.update);
 router.delete("/:postId", isLoggedIn, PostService.delete);
