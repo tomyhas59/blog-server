@@ -251,7 +251,7 @@ module.exports = class PostService {
       if (!userId) {
         return res
           .status(400)
-          .json({ error: "UserId query parameter is required" });
+          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
       }
 
       const posts = await Post.findAll({
@@ -279,7 +279,7 @@ module.exports = class PostService {
       if (!userId) {
         return res
           .status(400)
-          .json({ error: "UserId query parameter is required" });
+          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
       }
 
       const comments = await Comment.findAll({
@@ -487,7 +487,7 @@ module.exports = class PostService {
         },
       });
       Post.destroy({
-        where: {},
+        where: { id: postId },
       });
 
       res.status(200).json({ PostId: parseInt(postId, 10) }); //saga의 result 응답데이터, reducer의 action.data.PostId
@@ -574,7 +574,6 @@ module.exports = class PostService {
         {
           where: {
             id: commentId,
-            /*   UserId: req.user.id, */
           },
         }
       );
@@ -661,7 +660,6 @@ module.exports = class PostService {
         {
           where: {
             id: reCommentId,
-            /*   UserId: req.user.id, */
           },
         }
       );
@@ -702,6 +700,35 @@ module.exports = class PostService {
       }
       await post.removeLikers(req.user.id);
       res.status(200).json({ PostId: post.id, UserId: req.user.id });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  static async getLikedPosts(req, res, next) {
+    try {
+      const userId = req.query.userId;
+
+      if (!userId) {
+        return res
+          .status(400)
+          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+      }
+
+      const likedPosts = await Post.findAll({
+        include: [
+          {
+            model: User,
+            as: "Likers",
+            where: { id: userId },
+            attributes: ["id", "email", "nickname"],
+          },
+        ],
+        attributes: ["id", "content", "createdAt"],
+        order: [["createdAt", "DESC"]],
+      });
+
+      res.status(200).json(likedPosts);
     } catch (error) {
       console.error(error);
       next(error);

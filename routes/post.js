@@ -52,7 +52,8 @@ router.delete(
 //----------like---------------------------------
 router.patch("/:postId/like", isLoggedIn, PostService.postLike);
 router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
-module.exports = router;
+
+router.get("/likers", isLoggedIn, PostService.getLikedPosts);
 //-----chat------------------------------
 router.post("/chat", isLoggedIn, PostService.createChatMessage);
 router.get("/allChat", isLoggedIn, PostService.readChatMessage);
@@ -67,3 +68,5 @@ router.delete("/chat/delete", isLoggedIn, PostService.deleteAllChatMessages);
 //"https://Localhost:3000/post?lastId=32&limit=10" => 32번부터 10개 요청
 
 //"https://Localhost:3000/post?search=우자&sub=id
+
+module.exports = router;
