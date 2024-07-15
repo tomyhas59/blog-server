@@ -39,5 +39,10 @@ module.exports = class User extends Sequelize.Model {
       through: "Like", // 테이블 이름으로 생성, PostId 컬럼 생김
       as: "Liked" /* route에서 addLiked, getLiked, removeLiked 등의 매서드에 액세스 가능*/,
     });
+    db.User.belongsToMany(db.ChatRoom, {
+      through: "UserChatRoom",
+      as: "Rooms",
+    });
+    db.User.hasMany(db.ChatMessage);
   }
 };

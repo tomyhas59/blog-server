@@ -55,8 +55,9 @@ router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
 
 router.get("/likers", isLoggedIn, PostService.getLikedPosts);
 //-----chat------------------------------
-router.post("/chat", isLoggedIn, PostService.createChatMessage);
-router.get("/allChat", isLoggedIn, PostService.readChatMessage);
+router.post("/chatRoom", isLoggedIn, PostService.createChatRoom);
+router.post("/chatMessage", isLoggedIn, PostService.createChatMessage);
+router.get("/readChat", isLoggedIn, PostService.readChatMessage);
 router.delete("/chat/delete", isLoggedIn, PostService.deleteAllChatMessages);
 
 //"https://Localhost:3000/post?idx=3000" => req.qurey.idx = 3000;

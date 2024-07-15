@@ -6,7 +6,9 @@ const Image = require("../models/image");
 const Chat = require("../models/chat");
 const fs = require("fs");
 const path = require("path");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
+const ChatRoom = require("../models/chatRoom");
+const ChatMessage = require("../models/chatMessage");
 
 module.exports = class PostService {
   static async imageUpload(req, res) {
@@ -739,25 +741,67 @@ module.exports = class PostService {
     }
   }
   //chat----------------------------------------------
+  static async createChatRoom(req, res, next) {
+    const { user2Id } = req.body;
+    const user1Id = req.user.id;
+
+    try {
+      const user1 = await User.findByPk(user1Id, { include: "Rooms" });
+      const user2 = await User.findByPk(user2Id, { include: "Rooms" });
+
+      if (!user1 || !user2) {
+        return res.status(404).json({ message: "유저를 찾을 수 없습니다" });
+      }
+
+      const chatRoom = await ChatRoom.create({ roomType: "oneOnone" });
+      await chatRoom.addUsers([user1, user2]);
+
+      return res.status(201).json(chatRoom);
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "채팅 방을 생성하는 중에 오류가 발생했습니다." });
+    }
+  }
+
   static async createChatMessage(req, res, next) {
     try {
-      if (req.user.id) {
-        const chatMessage = await Chat.create({
-          sender: req.body.sender,
-          content: req.body.content,
-          UserId: req.user.id,
-        });
-        const fullChatMessage = await Chat.findOne({
-          where: { id: chatMessage.id },
-          include: [
-            {
-              model: User,
-              attributes: ["id", "nickname"],
-            },
-          ],
-        });
-        res.status(201).json(fullChatMessage);
+      const { roomId, content } = req.body;
+      const userId = req.user.id;
+
+      const chatRoom = await ChatRoom.findOne({
+        where: { id: roomId },
+        include: [
+          {
+            model: User,
+            as: "Users",
+            where: { id: userId },
+          },
+        ],
+      });
+      console.log("chatRoom:", chatRoom);
+
+      if (!chatRoom) {
+        return res.status(404).json({ message: "채팅방을 찾을 수 없습니다" });
       }
+
+      const chatMessage = await ChatMessage.create({
+        content: content,
+        UserId: userId,
+        ChatRoomId: roomId,
+      });
+
+      const fullChatMessage = await Chat.findOne({
+        where: { id: chatMessage.id },
+        include: [
+          {
+            model: User,
+            attributes: ["id", "nickname"],
+          },
+        ],
+      });
+
+      res.status(201).json(fullChatMessage);
     } catch (error) {
       console.error(error);
       next(error);
@@ -766,7 +810,53 @@ module.exports = class PostService {
   //get Chat-------------------------------------
   static async readChatMessage(req, res, next) {
     try {
-      const messages = await Chat.findAll();
+      const { user2Id } = req.body;
+      const user1Id = req.user.id;
+
+      const user1 = await User.findByPk(user1Id);
+      const user2 = await User.findByPk(user2Id);
+
+      if (!user1 || !user2) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // 채팅방 찾기 (me와 selectedUser가 속한 채팅방)
+      const chatRoom = await ChatRoom.findOne({
+        where: {
+          roomType: "oneOnone",
+        },
+        include: [
+          {
+            model: User,
+            as: "Users",
+            where: {
+              id: {
+                [Op.or]: [user1Id, user2Id],
+              },
+            },
+          },
+          {
+            model: ChatMessage,
+          },
+        ],
+      });
+
+      if (!chatRoom) {
+        return res.status(404).json({ message: "Chat room not found" });
+      }
+
+      // 채팅 메시지 가져오기
+      const messages = await ChatMessage.findAll({
+        where: {
+          ChatRoomId: chatRoom.id,
+        },
+        order: [["createdAt", "ASC"]], // 필요에 따라 정렬 설정
+        include: [
+          {
+            model: User,
+          },
+        ],
+      });
 
       res.status(200).json(messages);
     } catch (error) {
