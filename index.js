@@ -77,36 +77,88 @@ const io = socketIO(serverInstance, {
   },
 });
 const connectedUsers = new Map();
+
 io.on("connection", (socket) => {
-  socket.on("loginUser", (userInfo) => {
-    console.log("Received user info:", userInfo);
-    // 유저 정보를 connectedUsers에 등록
-    connectedUsers.set(userInfo.id, userInfo.nickname);
-    // 유저 리스트를 클라이언트로 전달
-    const userList = Array.from(connectedUsers).map(([id, nickname]) => ({
+  socket.on("createRoom", (newRoom) => {
+    console.log("채팅방 생성");
+    io.emit("newRoom", newRoom);
+  });
+
+  socket.on("joinRoom", (roomId, nickname) => {
+    console.log("채팅방 조인");
+    socket.join(roomId);
+    const systemMessage = {
+      content: `${nickname}님이 입장하셨습니다.`,
+      type: "join",
+      createdAt: new Date(),
+    };
+    io.to(roomId).emit("systemMessage", systemMessage);
+  });
+
+  socket.on("leaveRoom", (roomId, nickname) => {
+    console.log("채팅방 아웃");
+
+    const systemMessage = {
+      content: `${nickname}님이 퇴장하셨습니다.`,
+      type: "leave",
+      createdAt: new Date(),
+    };
+    io.to(roomId).emit("systemMessage", systemMessage);
+    socket.leave(roomId);
+  });
+
+  const updateUserList = () => {
+    const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
       id,
-      nickname,
+      nickname: userInfo.nickname,
     }));
     io.emit("updateUserList", userList);
+  };
+
+  socket.on("loginUser", (userInfo) => {
+    console.log("채팅방 로그인", userInfo);
+    // 유저 정보를 connectedUsers에 등록
+    if (connectedUsers.has(userInfo.id)) {
+      const existingSocketId = connectedUsers.get(userInfo.id).socketId;
+      if (existingSocketId !== socket.id) {
+        // 기존 연결 끊기
+        io.sockets.sockets.get(existingSocketId)?.disconnect();
+      }
+    }
+    // 유저 정보를 connectedUsers에 등록
+    connectedUsers.set(userInfo.id, {
+      nickname: userInfo.nickname,
+      socketId: socket.id,
+    });
+
+    // 유저 리스트를 클라이언트로 전달
+    updateUserList();
   });
-  socket.on("sendMessage", (message) => {
-    io.emit("receiveMessage", message);
+
+  socket.on("sendMessage", (messageData) => {
+    io.to(messageData.roomId).emit("receiveMessage", messageData);
   });
+
   // 로그아웃 시 유저 제거
   socket.on("logoutUser", (userId) => {
-    console.log("----", userId);
     connectedUsers.delete(userId);
     // 유저 리스트를 클라이언트로 전달
-    const userList = Array.from(connectedUsers).map(([id, nickname]) => ({
-      id,
-      nickname,
-    }));
-    io.emit("updateUserList", userList);
+    updateUserList();
   });
+
   socket.on("disconnect", () => {
-    console.log("A user disconnected");
+    // connectedUsers에서 해당 유저를 찾아 제거
+    const disconnectedUser = [...connectedUsers.entries()].find(
+      ([id, userInfo]) => userInfo.socketId === socket.id
+    );
+
+    if (disconnectedUser) {
+      connectedUsers.delete(disconnectedUser[0]);
+      updateUserList();
+    }
   });
 });
+
 const port = process.env.NODE_ENV === "production" ? 8000 : 3075;
 serverInstance.listen(port, () => {
   console.log(`server running on port ${port}`);

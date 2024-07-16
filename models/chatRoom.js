@@ -4,10 +4,15 @@ module.exports = class ChatRoom extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        roomType: {
-          type: Sequelize.STRING(20),
+        User1Id: {
+          type: Sequelize.INTEGER,
           allowNull: false,
-          comment: "채팅방 종류 (oneOnone, group)",
+          comment: "User ID of User 1 in the chat room",
+        },
+        User2Id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          comment: "User ID of User 2 in the chat room",
         },
       },
       {
@@ -22,10 +27,18 @@ module.exports = class ChatRoom extends Sequelize.Model {
   }
 
   static associate(db) {
-    db.ChatRoom.belongsToMany(db.User, {
-      through: "UserChatRoom",
-      as: "Users",
+    db.ChatRoom.belongsTo(db.User, {
+      foreignKey: "User1Id",
+      as: "User1",
     });
-    db.ChatRoom.hasMany(db.ChatMessage);
+
+    db.ChatRoom.belongsTo(db.User, {
+      foreignKey: "User2Id",
+      as: "User2",
+    });
+
+    db.ChatRoom.hasMany(db.ChatMessage, {
+      foreignKey: "ChatRoomId",
+    });
   }
 };

@@ -746,15 +746,17 @@ module.exports = class PostService {
     const user1Id = req.user.id;
 
     try {
-      const user1 = await User.findByPk(user1Id, { include: "Rooms" });
-      const user2 = await User.findByPk(user2Id, { include: "Rooms" });
+      const user1 = await User.findByPk(user1Id, { include: "User1Rooms" });
+      const user2 = await User.findByPk(user2Id, { include: "User2Rooms" });
 
       if (!user1 || !user2) {
         return res.status(404).json({ message: "유저를 찾을 수 없습니다" });
       }
 
-      const chatRoom = await ChatRoom.create({ roomType: "oneOnone" });
-      await chatRoom.addUsers([user1, user2]);
+      const chatRoom = await ChatRoom.create({
+        User1Id: user1Id,
+        User2Id: user2Id,
+      });
 
       return res.status(201).json(chatRoom);
     } catch (error) {
@@ -766,20 +768,12 @@ module.exports = class PostService {
 
   static async createChatMessage(req, res, next) {
     try {
-      const { roomId, content } = req.body;
+      const { ChatRoomId, content } = req.body;
       const userId = req.user.id;
 
       const chatRoom = await ChatRoom.findOne({
-        where: { id: roomId },
-        include: [
-          {
-            model: User,
-            as: "Users",
-            where: { id: userId },
-          },
-        ],
+        where: { id: ChatRoomId },
       });
-      console.log("chatRoom:", chatRoom);
 
       if (!chatRoom) {
         return res.status(404).json({ message: "채팅방을 찾을 수 없습니다" });
@@ -788,10 +782,10 @@ module.exports = class PostService {
       const chatMessage = await ChatMessage.create({
         content: content,
         UserId: userId,
-        ChatRoomId: roomId,
+        ChatRoomId: ChatRoomId,
       });
 
-      const fullChatMessage = await Chat.findOne({
+      const fullChatMessage = await ChatMessage.findOne({
         where: { id: chatMessage.id },
         include: [
           {
@@ -810,45 +804,16 @@ module.exports = class PostService {
   //get Chat-------------------------------------
   static async readChatMessage(req, res, next) {
     try {
-      const { user2Id } = req.body;
-      const user1Id = req.user.id;
+      const { roomId } = req.query;
 
-      const user1 = await User.findByPk(user1Id);
-      const user2 = await User.findByPk(user2Id);
-
-      if (!user1 || !user2) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // 채팅방 찾기 (me와 selectedUser가 속한 채팅방)
-      const chatRoom = await ChatRoom.findOne({
-        where: {
-          roomType: "oneOnone",
-        },
-        include: [
-          {
-            model: User,
-            as: "Users",
-            where: {
-              id: {
-                [Op.or]: [user1Id, user2Id],
-              },
-            },
-          },
-          {
-            model: ChatMessage,
-          },
-        ],
-      });
-
-      if (!chatRoom) {
-        return res.status(404).json({ message: "Chat room not found" });
+      if (!roomId) {
+        return res.status(404).json({ message: "roomId not found" });
       }
 
       // 채팅 메시지 가져오기
       const messages = await ChatMessage.findAll({
         where: {
-          ChatRoomId: chatRoom.id,
+          ChatRoomId: roomId,
         },
         order: [["createdAt", "ASC"]], // 필요에 따라 정렬 설정
         include: [
@@ -864,6 +829,42 @@ module.exports = class PostService {
       next(error);
     }
   }
+  //find chat room---------------------------------
+  static async findUserChatRooms(req, res, next) {
+    try {
+      const { userId } = req.query;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const chatRooms = await ChatRoom.findAll({
+        where: {
+          [Op.or]: [{ User1Id: userId }, { User2Id: userId }],
+        },
+        include: [
+          {
+            model: User,
+            as: "User1",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "User2",
+            attributes: ["id", "nickname"],
+          },
+        ],
+        attributes: ["id"],
+      });
+
+      res.status(200).json(chatRooms);
+    } catch (error) {
+      console.error("Error fetching user chat rooms:", error);
+      throw error;
+    }
+  }
+
   //delete Chat-----------------------------------
   static async deleteAllChatMessages(req, res, next) {
     try {
