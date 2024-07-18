@@ -94,9 +94,9 @@ io.on("connection", (socket) => {
     socket.join(roomId);
   });
 
-  socket.on("leaveRoom", (roomId, nickname) => {
+  socket.on("leaveRoom", (roomId, leaveRoomUserId) => {
     console.log("채팅방 아웃");
-
+    io.emit("leaveRoomUserId", leaveRoomUserId);
     socket.leave(roomId);
   });
 
