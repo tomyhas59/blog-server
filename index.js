@@ -87,23 +87,11 @@ io.on("connection", (socket) => {
   socket.on("joinRoom", (roomId, nickname) => {
     console.log("채팅방 조인");
     socket.join(roomId);
-    const systemMessage = {
-      content: `${nickname}님이 입장하셨습니다.`,
-      type: "join",
-      createdAt: new Date(),
-    };
-    io.to(roomId).emit("systemMessage", systemMessage);
   });
 
   socket.on("leaveRoom", (roomId, nickname) => {
     console.log("채팅방 아웃");
 
-    const systemMessage = {
-      content: `${nickname}님이 퇴장하셨습니다.`,
-      type: "leave",
-      createdAt: new Date(),
-    };
-    io.to(roomId).emit("systemMessage", systemMessage);
     socket.leave(roomId);
   });
 
