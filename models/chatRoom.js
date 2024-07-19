@@ -14,6 +14,14 @@ module.exports = class ChatRoom extends Sequelize.Model {
           allowNull: false,
           comment: "User ID of User 2 in the chat room",
         },
+        User1Join: {
+          type: Sequelize.BOOLEAN,
+          defaultValue: true,
+        },
+        User2Join: {
+          type: Sequelize.INTEGER,
+          defaultValue: true,
+        },
       },
       {
         modelName: "ChatRoom",

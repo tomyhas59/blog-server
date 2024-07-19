@@ -11,6 +11,7 @@ const dotenv = require("dotenv");
 const http = require("http");
 const socketIO = require("socket.io");
 const fs = require("fs");
+const ChatRoom = require("./models/chatRoom");
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -94,9 +95,33 @@ io.on("connection", (socket) => {
     socket.join(roomId);
   });
 
-  socket.on("leaveRoom", (roomId, leaveRoomUserId) => {
-    console.log("채팅방 아웃");
-    io.emit("leaveRoomUserId", leaveRoomUserId);
+  socket.on("leaveRoom", async (roomId, leaveRoomUserId) => {
+    try {
+      const room = await ChatRoom.findByPk(roomId);
+
+      if (room) {
+        if (room.User1Id === leaveRoomUserId) {
+          room.User1Join = false;
+          // 유저가 두 명 모두 나간 경우 방 삭제
+          if (!room.User2Join) {
+            await room.destroy();
+          } else {
+            await room.save();
+          }
+        } else if (room.User2Id === leaveRoomUserId) {
+          room.User2Join = false;
+          // 유저가 두 명 모두 나간 경우 방 삭제
+          if (!room.User1Join) {
+            await room.destroy();
+          } else {
+            await room.save();
+          }
+        }
+        io.emit("updateUserRoomList");
+      }
+    } catch (err) {
+      console.error(err);
+    }
     socket.leave(roomId);
   });
 

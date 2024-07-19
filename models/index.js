@@ -43,7 +43,7 @@ db.Sequelize = Sequelize;
 
 module.exports = db;
 
-//npx sequelize-cli migration:generate --name create-recomments
+//npx sequelize-cli migration:generate --name create
 
 // await queryInterface.createTable("테이블명", 컬럼명: {type: Sequelize.TEXT, ....})
 // await queryInterface.dropTable('테이블명')

@@ -753,6 +753,19 @@ module.exports = class PostService {
         return res.status(404).json({ message: "유저를 찾을 수 없습니다" });
       }
 
+      const existingChatRoom = await ChatRoom.findOne({
+        where: {
+          [Op.or]: [
+            { User1Id: user1Id, User2Id: user2Id },
+            { User1Id: user2Id, User2Id: user1Id },
+          ],
+        },
+      });
+
+      if (existingChatRoom) {
+        return res.status(400).json({ message: "이미 채팅 방이 존재합니다." });
+      }
+
       const chatRoom = await ChatRoom.create({
         User1Id: user1Id,
         User2Id: user2Id,
@@ -841,7 +854,16 @@ module.exports = class PostService {
 
       const chatRooms = await ChatRoom.findAll({
         where: {
-          [Op.or]: [{ User1Id: userId }, { User2Id: userId }],
+          [Op.or]: [
+            {
+              User1Id: userId,
+              User1Join: true,
+            },
+            {
+              User2Id: userId,
+              User2Join: true,
+            },
+          ],
         },
         include: [
           {
@@ -855,7 +877,7 @@ module.exports = class PostService {
             attributes: ["id", "nickname"],
           },
         ],
-        attributes: ["id"],
+        attributes: ["id", "User1Join", "User2Join"],
       });
 
       res.status(200).json(chatRooms);
