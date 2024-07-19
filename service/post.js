@@ -763,7 +763,15 @@ module.exports = class PostService {
       });
 
       if (existingChatRoom) {
-        return res.status(400).json({ message: "이미 채팅 방이 존재합니다." });
+        if (existingChatRoom.User1Id === user1Id) {
+          existingChatRoom.User1Join = true;
+        } else {
+          existingChatRoom.User2Join = true;
+        }
+
+        await existingChatRoom.save();
+
+        return res.status(200).json(existingChatRoom);
       }
 
       const chatRoom = await ChatRoom.create({
@@ -828,7 +836,7 @@ module.exports = class PostService {
         where: {
           ChatRoomId: roomId,
         },
-        order: [["createdAt", "ASC"]], // 필요에 따라 정렬 설정
+        order: [["createdAt", "ASC"]],
         include: [
           {
             model: User,

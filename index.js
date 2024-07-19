@@ -12,6 +12,7 @@ const http = require("http");
 const socketIO = require("socket.io");
 const fs = require("fs");
 const ChatRoom = require("./models/chatRoom");
+const ChatMessage = require("./models/chatMessage");
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -95,12 +96,12 @@ io.on("connection", (socket) => {
     socket.join(roomId);
   });
 
-  socket.on("leaveRoom", async (roomId, leaveRoomUserId) => {
+  socket.on("leaveRoom", async (roomId, leaveRoomUser) => {
     try {
       const room = await ChatRoom.findByPk(roomId);
 
       if (room) {
-        if (room.User1Id === leaveRoomUserId) {
+        if (room.User1Id === leaveRoomUser.id) {
           room.User1Join = false;
           // 유저가 두 명 모두 나간 경우 방 삭제
           if (!room.User2Join) {
@@ -108,7 +109,7 @@ io.on("connection", (socket) => {
           } else {
             await room.save();
           }
-        } else if (room.User2Id === leaveRoomUserId) {
+        } else if (room.User2Id === leaveRoomUser.id) {
           room.User2Join = false;
           // 유저가 두 명 모두 나간 경우 방 삭제
           if (!room.User1Join) {
@@ -117,6 +118,22 @@ io.on("connection", (socket) => {
             await room.save();
           }
         }
+
+        const systemMessage = {
+          id: new Date().getTime(),
+          User: leaveRoomUser || null,
+          content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
+          createdAt: new Date().getTime(),
+          roomId: roomId,
+        };
+
+        await ChatMessage.create({
+          content: systemMessage.content,
+          UserId: systemMessage.id,
+          ChatRoomId: roomId,
+        });
+
+        io.to(roomId).emit("systemMessage", systemMessage);
         io.emit("updateUserRoomList");
       }
     } catch (err) {
