@@ -129,7 +129,7 @@ io.on("connection", (socket) => {
 
         await ChatMessage.create({
           content: systemMessage.content,
-          UserId: systemMessage.id,
+          UserId: leaveRoomUser.id,
           ChatRoomId: roomId,
         });
 

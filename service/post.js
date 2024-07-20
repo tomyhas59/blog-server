@@ -752,7 +752,7 @@ module.exports = class PostService {
       if (!user1 || !user2) {
         return res.status(404).json({ message: "유저를 찾을 수 없습니다" });
       }
-
+      //이미 있으면 기존 채팅방 불러오기
       const existingChatRoom = await ChatRoom.findOne({
         where: {
           [Op.or]: [
@@ -760,6 +760,19 @@ module.exports = class PostService {
             { User1Id: user2Id, User2Id: user1Id },
           ],
         },
+        include: [
+          {
+            model: User,
+            as: "User1",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "User2",
+            attributes: ["id", "nickname"],
+          },
+        ],
+        attributes: ["id", "User1Join", "User2Join"],
       });
 
       if (existingChatRoom) {
@@ -773,13 +786,32 @@ module.exports = class PostService {
 
         return res.status(200).json(existingChatRoom);
       }
-
+      //채팅방 새로 생성
       const chatRoom = await ChatRoom.create({
         User1Id: user1Id,
         User2Id: user2Id,
       });
 
-      return res.status(201).json(chatRoom);
+      const fullChatRoom = await ChatRoom.findOne({
+        where: {
+          id: chatRoom.id,
+        },
+        include: [
+          {
+            model: User,
+            as: "User1",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "User2",
+            attributes: ["id", "nickname"],
+          },
+        ],
+        attributes: ["id", "User1Join", "User2Join"],
+      });
+
+      return res.status(201).json(fullChatRoom);
     } catch (error) {
       return res
         .status(500)
