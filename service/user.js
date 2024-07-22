@@ -41,6 +41,18 @@ module.exports = class UserService {
         where: {
           email: req.body.email,
         },
+        include: [
+          {
+            model: User,
+            as: "Followers",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "Followings",
+            attributes: ["id", "nickname"],
+          },
+        ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
 
@@ -76,14 +88,7 @@ module.exports = class UserService {
       res.cookie("accessToken", accessToken, cookieOptions);
       res.cookie("refreshToken", refreshToken, cookieOptions);
 
-      res.status(200).json({
-        nickname: user.nickname,
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
-        accessToken,
-        refreshToken,
-      });
+      res.status(200).json(user);
     } catch (err) {
       console.error(err);
       next(err);
@@ -127,6 +132,18 @@ module.exports = class UserService {
       const user = await User.findOne({
         //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
         where: { email: req.user.email },
+        include: [
+          {
+            model: User,
+            as: "Followers",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "Followings",
+            attributes: ["id", "nickname"],
+          },
+        ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
       res.json(user);
@@ -149,6 +166,38 @@ module.exports = class UserService {
     } catch (err) {
       console.error(err);
       next(err);
+    }
+  }
+  //----------------------------------------------------------------------
+  static async follow(req, res, next) {
+    const userId = req.user.id;
+    const followId = req.params.id;
+
+    try {
+      const user = await User.findByPk(userId);
+      const follow = await User.findByPk(followId);
+
+      if (!user || !follow) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const existingFollow = await user.getFollowings({
+        where: { id: followId },
+      });
+
+      if (existingFollow.length > 0) {
+        return res.status(400).json({ message: "이미 팔로우했습니다" });
+      }
+
+      await user.addFollowings(follow);
+
+      return res.status(200).json({
+        UserId: follow.id,
+        Nickname: follow.nickname,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
   }
 };
