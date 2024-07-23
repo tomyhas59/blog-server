@@ -200,4 +200,26 @@ module.exports = class UserService {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
+
+  static async unFollow(req, res, next) {
+    const userId = req.user.id;
+    const unFollowId = req.params.id;
+
+    try {
+      const user = await User.findByPk(userId);
+      const unFollow = await User.findByPk(unFollowId);
+
+      if (!user || !unFollow) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await user.removeFollowings(unFollow.id);
+      return res.status(200).json({
+        UserId: unFollow.id,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
 };

@@ -9,5 +9,6 @@ router.post("/logout", isLoggedIn, UserService.logOut);
 router.post("/refreshToken", UserService.refreshToken);
 router.get("/setUser", isLoggedIn, UserService.setUser);
 router.patch("/:id/follow", isLoggedIn, UserService.follow);
+router.delete("/:id/follow", isLoggedIn, UserService.unFollow);
 
 module.exports = router;
