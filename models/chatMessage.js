@@ -9,7 +9,14 @@ module.exports = class ChatMessage extends Sequelize.Model {
           allowNull: false,
           comment: "채팅 메시지",
         },
+        isRead: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+          comment: "메시지가 읽혔는지 여부",
+        },
       },
+
       {
         modelName: "ChatMessage",
         tableName: "chatMessages",

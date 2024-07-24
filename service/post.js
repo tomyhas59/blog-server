@@ -855,7 +855,7 @@ module.exports = class PostService {
     }
   }
   //get Chat-------------------------------------
-  static async readChatMessage(req, res, next) {
+  static async getChatMessage(req, res, next) {
     try {
       const { roomId } = req.query;
 
@@ -926,9 +926,47 @@ module.exports = class PostService {
       throw error;
     }
   }
+  //read chat message---------------------------------
+  static async readChatMessges(req, res, next) {
+    const { messageId } = req.params;
+
+    try {
+      const message = await ChatMessage.findByPk(messageId);
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      message.isRead = true;
+      await message.save();
+
+      return res.json({ message: "Message marked as read" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  //get unRead chat message---------------------------------
+  static async getUnReadChatMessges(req, res, next) {
+    const { roomId } = req.params;
+
+    try {
+      const unreadMessages = await ChatMessage.findAll({
+        where: {
+          ChatRoomId: roomId,
+          isRead: false,
+        },
+      });
+
+      return res.json(unreadMessages);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 
   //delete Chat-----------------------------------
-  static async deleteAllChatMessages(req, res, next) {
+  static async deleteChatMessages(req, res, next) {
     try {
       await Chat.destroy({
         where: {}, // 모든 레코드 대상

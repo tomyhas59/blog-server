@@ -58,9 +58,17 @@ router.get("/likers", isLoggedIn, PostService.getLikedPosts);
 router.post("/chatRoom", isLoggedIn, PostService.createChatRoom);
 router.post("/chatMessage", isLoggedIn, PostService.createChatMessage);
 router.get("/findChat", isLoggedIn, PostService.findUserChatRooms);
-router.get("/readChat", isLoggedIn, PostService.readChatMessage);
-router.delete("/chat/delete", isLoggedIn, PostService.deleteAllChatMessages);
-
+router.get("/getChat", isLoggedIn, PostService.getChatMessage);
+router.patch(
+  "chatMessages/:messageId/read",
+  isLoggedIn,
+  PostService.readChatMessges
+);
+router.get(
+  "/chatRooms/:roomId/unreadMessages",
+  isLoggedIn,
+  PostService.getUnReadChatMessges
+);
 //"https://Localhost:3000/post?idx=3000" => req.qurey.idx = 3000;
 
 //"https://Localhost:3000/post/35" => req.params.postId = 35

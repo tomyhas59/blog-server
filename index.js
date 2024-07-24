@@ -86,70 +86,6 @@ const io = socketIO(serverInstance, {
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
-  socket.on("createRoom", (newRoom) => {
-    console.log("채팅방 생성");
-    io.emit("newRoom", newRoom);
-  });
-
-  socket.on("joinRoom", (roomId, nickname) => {
-    console.log("채팅방 조인");
-    socket.join(roomId);
-  });
-
-  socket.on("leaveRoom", async (roomId, leaveRoomUser) => {
-    try {
-      const room = await ChatRoom.findByPk(roomId);
-
-      if (room) {
-        if (room.User1Id === leaveRoomUser.id) {
-          room.User1Join = false;
-          // 유저가 두 명 모두 나간 경우 방 삭제
-          if (!room.User2Join) {
-            await room.destroy();
-          } else {
-            await room.save();
-          }
-        } else if (room.User2Id === leaveRoomUser.id) {
-          room.User2Join = false;
-          // 유저가 두 명 모두 나간 경우 방 삭제
-          if (!room.User1Join) {
-            await room.destroy();
-          } else {
-            await room.save();
-          }
-        }
-
-        const systemMessage = {
-          id: new Date().getTime(),
-          User: leaveRoomUser || null,
-          content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
-          createdAt: new Date().getTime(),
-          roomId: roomId,
-        };
-
-        await ChatMessage.create({
-          content: systemMessage.content,
-          UserId: leaveRoomUser.id,
-          ChatRoomId: roomId,
-        });
-
-        io.to(roomId).emit("systemMessage", systemMessage);
-        io.emit("updateUserRoomList");
-      }
-    } catch (err) {
-      console.error(err);
-    }
-    socket.leave(roomId);
-  });
-
-  const updateUserList = () => {
-    const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
-      id,
-      nickname: userInfo.nickname,
-    }));
-    io.emit("updateUserList", userList);
-  };
-
   socket.on("loginUser", (userInfo) => {
     console.log("채팅방 로그인", userInfo);
     // 유저 정보를 connectedUsers에 등록
@@ -169,6 +105,115 @@ io.on("connection", (socket) => {
     // 유저 리스트를 클라이언트로 전달
     updateUserList();
   });
+
+  socket.on("createRoom", (newRoom) => {
+    console.log("채팅방 생성");
+    io.emit("newRoom", newRoom);
+  });
+
+  socket.on("joinRoom", async (roomId, joinRoomUser) => {
+    try {
+      const room = await ChatRoom.findByPk(roomId);
+
+      if (room) {
+        let sendSystemMessgae = false;
+
+        if (room.User1Id === joinRoomUser.id) {
+          if (room.User1Join === false) {
+            sendSystemMessgae = true;
+          }
+          room.User1Join = true;
+          await room.save();
+        }
+        if (room.User2Id === joinRoomUser.id) {
+          if (room.User2Join === false) {
+            sendSystemMessgae = true;
+          }
+          room.User2Join = true;
+          await room.save();
+        }
+
+        if (sendSystemMessgae) {
+          const systemMessage = {
+            id: new Date().getTime(),
+            User: joinRoomUser || null,
+            content: `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`,
+            createdAt: new Date().getTime(),
+            roomId: roomId,
+          };
+
+          await ChatMessage.create({
+            content: systemMessage.content,
+            UserId: joinRoomUser.id,
+            ChatRoomId: roomId,
+          });
+
+          io.to(roomId).emit("systemMessage", systemMessage);
+        }
+        socket.join(roomId);
+        io.emit("updateUserRoomList");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  socket.on("leaveRoom", async (roomId, leaveRoomUser) => {
+    try {
+      const room = await ChatRoom.findByPk(roomId);
+
+      if (room) {
+        if (room.User1Id === leaveRoomUser.id) {
+          room.User1Join = false;
+          // 유저가 두 명 모두 나간 경우 방 삭제
+          if (!room.User2Join) {
+            await room.destroy();
+            io.emit("updateUserRoomList");
+            return;
+          } else {
+            await room.save();
+          }
+        } else if (room.User2Id === leaveRoomUser.id) {
+          room.User2Join = false;
+          // 유저가 두 명 모두 나간 경우 방 삭제
+          if (!room.User1Join) {
+            await room.destroy();
+            io.emit("updateUserRoomList");
+            return;
+          } else {
+            await room.save();
+          }
+        }
+
+        const systemMessage = {
+          id: new Date().getTime(),
+          User: leaveRoomUser || null,
+          content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
+          createdAt: new Date().getTime(),
+          roomId: roomId,
+        };
+
+        await ChatMessage.create({
+          content: systemMessage.content,
+          UserId: leaveRoomUser.id,
+          ChatRoomId: roomId,
+        });
+        io.to(roomId).emit("systemMessage", systemMessage);
+        io.emit("updateUserRoomList");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    socket.leave(roomId);
+  });
+
+  const updateUserList = () => {
+    const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
+      id,
+      nickname: userInfo.nickname,
+    }));
+    io.emit("updateUserList", userList);
+  };
 
   socket.on("sendMessage", (messageData) => {
     io.to(messageData.roomId).emit("receiveMessage", messageData);
