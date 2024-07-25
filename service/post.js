@@ -3,7 +3,6 @@ const User = require("../models/user");
 const Comment = require("../models/comment");
 const ReComment = require("../models/recomment");
 const Image = require("../models/image");
-const Chat = require("../models/chat");
 const fs = require("fs");
 const path = require("path");
 const { Op, where } = require("sequelize");
@@ -772,7 +771,6 @@ module.exports = class PostService {
             attributes: ["id", "nickname"],
           },
         ],
-        attributes: ["id", "User1Join", "User2Join"],
       });
 
       if (existingChatRoom) {
@@ -783,7 +781,6 @@ module.exports = class PostService {
         }
 
         await existingChatRoom.save();
-
         return res.status(200).json(existingChatRoom);
       }
       //채팅방 새로 생성
@@ -962,23 +959,6 @@ module.exports = class PostService {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  //delete Chat-----------------------------------
-  static async deleteChatMessages(req, res, next) {
-    try {
-      await Chat.destroy({
-        where: {}, // 모든 레코드 대상
-        truncate: true, // 테이블을 Truncate하여 모든 데이터를 삭제
-      });
-
-      const messages = await Chat.findAll();
-
-      res.status(200).json(messages);
-    } catch (error) {
-      console.error(error);
-      next(error);
     }
   }
 };

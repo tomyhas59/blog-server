@@ -4,7 +4,6 @@ const user = require("./user");
 const comment = require("./comment");
 const recomment = require("./recomment");
 const image = require("./image");
-const chat = require("./chat");
 const chatMessage = require("./chatMessage");
 const chatRoom = require("./chatRoom");
 
@@ -25,7 +24,6 @@ db.Post = post;
 db.Image = image;
 db.Comment = comment;
 db.ReComment = recomment;
-db.Chat = chat;
 db.ChatMessage = chatMessage;
 db.ChatRoom = chatRoom;
 
