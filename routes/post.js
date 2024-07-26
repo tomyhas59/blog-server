@@ -56,7 +56,6 @@ router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
 router.get("/likers", isLoggedIn, PostService.getLikedPosts);
 //-----chat------------------------------
 router.post("/chatRoom", isLoggedIn, PostService.createChatRoom);
-router.post("/chatMessage", isLoggedIn, PostService.createChatMessage);
 router.get("/findChat", isLoggedIn, PostService.findUserChatRooms);
 router.get("/getChat", isLoggedIn, PostService.getChatMessage);
 router.patch(

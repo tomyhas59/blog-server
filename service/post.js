@@ -816,41 +816,6 @@ module.exports = class PostService {
     }
   }
 
-  static async createChatMessage(req, res, next) {
-    try {
-      const { ChatRoomId, content } = req.body;
-      const userId = req.user.id;
-
-      const chatRoom = await ChatRoom.findOne({
-        where: { id: ChatRoomId },
-      });
-
-      if (!chatRoom) {
-        return res.status(404).json({ message: "채팅방을 찾을 수 없습니다" });
-      }
-
-      const chatMessage = await ChatMessage.create({
-        content: content,
-        UserId: userId,
-        ChatRoomId: ChatRoomId,
-      });
-
-      const fullChatMessage = await ChatMessage.findOne({
-        where: { id: chatMessage.id },
-        include: [
-          {
-            model: User,
-            attributes: ["id", "nickname"],
-          },
-        ],
-      });
-
-      res.status(201).json(fullChatMessage);
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
-  }
   //get Chat-------------------------------------
   static async getChatMessage(req, res, next) {
     try {

@@ -85,6 +85,15 @@ const io = socketIO(serverInstance, {
   },
 });
 const connectedUsers = new Map();
+const joinedUsers = new Map();
+
+const updateUserList = () => {
+  const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
+    id,
+    nickname: userInfo.nickname,
+  }));
+  io.emit("updateUserList", userList);
+};
 
 io.on("connection", (socket) => {
   socket.on("loginUser", (userInfo) => {
@@ -129,29 +138,50 @@ io.on("connection", (socket) => {
       attributes: ["id", "User1Join", "User2Join"],
     });
 
-    const systemMessage = {
-      id: new Date().getTime(),
-      User: joinRoomUser || null,
-      content: `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`,
-      createdAt: new Date().getTime(),
-      roomId: roomId,
-    };
-
-    await ChatMessage.create({
-      content: systemMessage.content,
-      UserId: joinRoomUser.id,
-      ChatRoomId: roomId,
+    const messageCount = await ChatMessage.count({
+      where: { ChatRoomId: roomId },
     });
+    //첫 생성 방은 메시지 미송신
+    if (messageCount > 0) {
+      const systemMessage = await ChatMessage.create({
+        content: `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`,
+        UserId: joinRoomUser.id,
+        ChatRoomId: roomId,
+      });
 
-    io.to(roomId).emit("systemMessage", systemMessage);
+      io.to(roomId).emit("systemMessage", systemMessage);
+    }
+
     io.emit("newRoom", fullChatRoom);
   });
 
-  socket.on("joinRoom", async (roomId) => {
+  socket.on("joinRoom", async (roomId, me) => {
+    // 유저 정보를 connectedUsers에 등록
+    console.log(`${roomId}번 방 입장`, me.nickname);
+    if (!joinedUsers.has(me.id)) {
+      joinedUsers.set(me.id, {
+        nickname: me.nickname,
+      });
+    }
+
+    console.log("입장 후 ", joinedUsers);
+    await ChatMessage.update(
+      { isRead: true },
+      { where: { ChatRoomId: roomId, isRead: false } }
+    );
     socket.join(roomId);
   });
 
-  socket.on("leaveRoom", async (roomId, leaveRoomUser) => {
+  socket.on("leaveRoom", async (roomId, me) => {
+    console.log(`${roomId}번 방 나감`, me.nickname);
+
+    joinedUsers.delete(me.id);
+
+    console.log("나간 후", joinedUsers);
+    socket.leave(roomId);
+  });
+
+  socket.on("outRoom", async (roomId, leaveRoomUser) => {
     try {
       const room = await ChatRoom.findByPk(roomId);
 
@@ -180,19 +210,12 @@ io.on("connection", (socket) => {
           }
         }
 
-        const systemMessage = {
-          id: new Date().getTime(),
-          User: leaveRoomUser || null,
+        const systemMessage = await ChatMessage.create({
           content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
-          createdAt: new Date().getTime(),
-          roomId: roomId,
-        };
-
-        await ChatMessage.create({
-          content: systemMessage.content,
           UserId: leaveRoomUser.id,
           ChatRoomId: roomId,
         });
+        joinedUsers.delete(leaveRoomUser.id);
         io.to(roomId).emit("systemMessage", systemMessage);
         io.emit("updateUserRoomList");
       }
@@ -202,21 +225,32 @@ io.on("connection", (socket) => {
     socket.leave(roomId);
   });
 
-  const updateUserList = () => {
-    const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
-      id,
-      nickname: userInfo.nickname,
-    }));
-    io.emit("updateUserList", userList);
-  };
+  socket.on("sendMessage", async (messageData, selectedUserId) => {
+    const { roomId, userId, content } = messageData;
 
-  socket.on("sendMessage", (messageData) => {
-    io.to(messageData.roomId).emit("receiveMessage", messageData);
+    const chatMessage = await ChatMessage.create({
+      content,
+      UserId: userId,
+      ChatRoomId: roomId,
+      isRead: joinedUsers.has(selectedUserId),
+    });
+
+    console.log(joinedUsers, selectedUserId);
+    const fullChatMessage = await ChatMessage.findOne({
+      where: { id: chatMessage.id },
+      include: {
+        model: User,
+        attributes: ["id", "nickname"],
+      },
+    });
+
+    io.to(roomId).emit("receiveMessage", fullChatMessage);
   });
 
   // 로그아웃 시 유저 제거
   socket.on("logoutUser", (userId) => {
     connectedUsers.delete(userId);
+    joinedUsers.delete(userId);
     // 유저 리스트를 클라이언트로 전달
     updateUserList();
   });
