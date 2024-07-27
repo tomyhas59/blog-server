@@ -63,11 +63,7 @@ router.patch(
   isLoggedIn,
   PostService.readChatMessges
 );
-router.get(
-  "/chatRooms/:roomId/unreadMessages",
-  isLoggedIn,
-  PostService.getUnReadChatMessges
-);
+
 //"https://Localhost:3000/post?idx=3000" => req.qurey.idx = 3000;
 
 //"https://Localhost:3000/post/35" => req.params.postId = 35

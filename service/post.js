@@ -5,7 +5,7 @@ const ReComment = require("../models/recomment");
 const Image = require("../models/image");
 const fs = require("fs");
 const path = require("path");
-const { Op, where } = require("sequelize");
+const { Op } = require("sequelize");
 const ChatRoom = require("../models/chatRoom");
 const ChatMessage = require("../models/chatMessage");
 
@@ -849,11 +849,6 @@ module.exports = class PostService {
     try {
       const { userId } = req.query;
 
-      const user = await User.findByPk(userId);
-      if (!user) {
-        throw new Error("User not found");
-      }
-
       const chatRooms = await ChatRoom.findAll({
         where: {
           [Op.or]: [
@@ -882,7 +877,23 @@ module.exports = class PostService {
         attributes: ["id", "User1Join", "User2Join"],
       });
 
-      res.status(200).json(chatRooms);
+      const chatRoomsWithUnReadCounts = await Promise.all(
+        chatRooms.map(async (chatRoom) => {
+          const unReadMessageCount = await ChatMessage.count({
+            where: {
+              ChatRoomId: chatRoom.id,
+              isRead: false,
+            },
+          });
+
+          return {
+            ...chatRoom.toJSON(),
+            UnReadMessages: unReadMessageCount,
+          };
+        })
+      );
+
+      res.status(200).json(chatRoomsWithUnReadCounts);
     } catch (error) {
       console.error("Error fetching user chat rooms:", error);
       throw error;
@@ -902,25 +913,6 @@ module.exports = class PostService {
       await message.save();
 
       return res.json({ message: "Message marked as read" });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  //get unRead chat message---------------------------------
-  static async getUnReadChatMessges(req, res, next) {
-    const { roomId } = req.params;
-
-    try {
-      const unreadMessages = await ChatMessage.findAll({
-        where: {
-          ChatRoomId: roomId,
-          isRead: false,
-        },
-      });
-
-      return res.json(unreadMessages);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal server error" });

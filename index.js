@@ -14,6 +14,9 @@ const fs = require("fs");
 const ChatRoom = require("./models/chatRoom");
 const ChatMessage = require("./models/chatMessage");
 const User = require("./models/user");
+const { Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
+
 // Middleware-------------------------------
 //프론트와 백엔드의 도메인 일치시키기---------------
 app.use(
@@ -84,13 +87,13 @@ const io = socketIO(serverInstance, {
     credentials: true,
   },
 });
-const connectedUsers = new Map();
-const joinedUsers = new Map();
+const connectedUsers = new Map(); // 현재 접속한 유저 목록
+const roomViewers = new Map(); // 채팅방에 접속한 유저 목록
 
 const updateUserList = () => {
-  const userList = Array.from(connectedUsers).map(([id, userInfo]) => ({
-    id,
-    nickname: userInfo.nickname,
+  const userList = Array.from(connectedUsers.values()).map((user) => ({
+    id: user.id,
+    nickname: user.nickname,
   }));
   io.emit("updateUserList", userList);
 };
@@ -108,7 +111,7 @@ io.on("connection", (socket) => {
     }
     // 유저 정보를 connectedUsers에 등록
     connectedUsers.set(userInfo.id, {
-      nickname: userInfo.nickname,
+      ...userInfo,
       socketId: socket.id,
     });
 
@@ -156,28 +159,37 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", async (roomId, me) => {
-    // 유저 정보를 connectedUsers에 등록
-    console.log(`${roomId}번 방 입장`, me.nickname);
-    if (!joinedUsers.has(me.id)) {
-      joinedUsers.set(me.id, {
-        nickname: me.nickname,
-      });
-    }
+    console.log(`${roomId}번 방 입장`, me?.nickname);
 
-    console.log("입장 후 ", joinedUsers);
     await ChatMessage.update(
       { isRead: true },
-      { where: { ChatRoomId: roomId, isRead: false } }
+      {
+        where: {
+          ChatRoomId: roomId,
+          UserId: { [Op.ne]: me?.id },
+          isRead: false,
+        },
+      }
     );
+
+    if (!roomViewers.has(roomId)) {
+      roomViewers.set(roomId, new Set());
+    }
+    roomViewers.get(roomId).add(me?.id);
+
     socket.join(roomId);
+    socket.emit("resetRead", roomId);
   });
 
   socket.on("leaveRoom", async (roomId, me) => {
     console.log(`${roomId}번 방 나감`, me.nickname);
+    if (roomViewers.has(roomId)) {
+      roomViewers.get(roomId).delete(me.id);
+      if (roomViewers.get(roomId).size === 0) {
+        roomViewers.delete(roomId);
+      }
+    }
 
-    joinedUsers.delete(me.id);
-
-    console.log("나간 후", joinedUsers);
     socket.leave(roomId);
   });
 
@@ -215,7 +227,14 @@ io.on("connection", (socket) => {
           UserId: leaveRoomUser.id,
           ChatRoomId: roomId,
         });
-        joinedUsers.delete(leaveRoomUser.id);
+
+        if (roomViewers.has(roomId)) {
+          roomViewers.get(roomId).delete(leaveRoomUser.id);
+          if (roomViewers.get(roomId).size === 0) {
+            roomViewers.delete(roomId);
+          }
+        }
+
         io.to(roomId).emit("systemMessage", systemMessage);
         io.emit("updateUserRoomList");
       }
@@ -228,14 +247,29 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", async (messageData, selectedUserId) => {
     const { roomId, userId, content } = messageData;
 
+    const isRead =
+      roomViewers.has(roomId) && roomViewers.get(roomId).has(selectedUserId);
+
     const chatMessage = await ChatMessage.create({
       content,
       UserId: userId,
       ChatRoomId: roomId,
-      isRead: joinedUsers.has(selectedUserId),
+      isRead: isRead,
     });
 
-    console.log(joinedUsers, selectedUserId);
+    const unReadMessages = await ChatMessage.findAll({
+      where: {
+        ChatRoomId: roomId,
+        isRead: false,
+      },
+      include: {
+        model: User,
+        attributes: ["id", "nickname"],
+      },
+    });
+
+    console.log(unReadMessages);
+
     const fullChatMessage = await ChatMessage.findOne({
       where: { id: chatMessage.id },
       include: {
@@ -245,13 +279,21 @@ io.on("connection", (socket) => {
     });
 
     io.to(roomId).emit("receiveMessage", fullChatMessage);
+    io.emit("unReadMessages", { unReadMessages, roomId });
   });
 
   // 로그아웃 시 유저 제거
   socket.on("logoutUser", (userId) => {
     connectedUsers.delete(userId);
-    joinedUsers.delete(userId);
-    // 유저 리스트를 클라이언트로 전달
+
+    for (const [roomId, viewers] of roomViewers.entries()) {
+      viewers.delete(userId);
+      if (viewers.size === 0) {
+        roomViewers.delete(roomId);
+        socket.leave(roomId);
+      }
+    }
+
     updateUserList();
   });
 
