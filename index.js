@@ -126,6 +126,7 @@ io.on("connection", (socket) => {
         content: `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`,
         UserId: joinRoomUser.id,
         ChatRoomId: roomId,
+        isRead: true,
       });
 
       io.to(roomId).emit("systemMessage", systemMessage);
@@ -154,6 +155,7 @@ io.on("connection", (socket) => {
     roomViewers.get(roomId).add(me?.id);
 
     socket.join(roomId);
+    socket.to(roomId).emit("joinRoom");
     socket.emit("resetRead", roomId);
   });
 
@@ -202,6 +204,7 @@ io.on("connection", (socket) => {
           content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
           UserId: leaveRoomUser.id,
           ChatRoomId: roomId,
+          isRead: true,
         });
 
         if (roomViewers.has(roomId)) {
@@ -210,7 +213,7 @@ io.on("connection", (socket) => {
             roomViewers.delete(roomId);
           }
         }
-
+        io.to(roomId).emit("outRoom");
         io.to(roomId).emit("systemMessage", systemMessage);
         io.emit("updateUserRoomList");
       }
