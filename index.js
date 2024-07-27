@@ -87,36 +87,12 @@ const io = socketIO(serverInstance, {
     credentials: true,
   },
 });
-const connectedUsers = new Map(); // 현재 접속한 유저 목록
-const roomViewers = new Map(); // 채팅방에 접속한 유저 목록
 
-const updateUserList = () => {
-  const userList = Array.from(connectedUsers.values()).map((user) => ({
-    id: user.id,
-    nickname: user.nickname,
-  }));
-  io.emit("updateUserList", userList);
-};
+const roomViewers = new Map(); // 채팅방에 접속한 유저 목록
 
 io.on("connection", (socket) => {
   socket.on("loginUser", (userInfo) => {
     console.log("채팅방 로그인", userInfo);
-    // 유저 정보를 connectedUsers에 등록
-    if (connectedUsers.has(userInfo.id)) {
-      const existingSocketId = connectedUsers.get(userInfo.id).socketId;
-      if (existingSocketId !== socket.id) {
-        // 기존 연결 끊기
-        io.sockets.sockets.get(existingSocketId)?.disconnect();
-      }
-    }
-    // 유저 정보를 connectedUsers에 등록
-    connectedUsers.set(userInfo.id, {
-      ...userInfo,
-      socketId: socket.id,
-    });
-
-    // 유저 리스트를 클라이언트로 전달
-    updateUserList();
   });
 
   socket.on("createRoom", async (roomId, joinRoomUser) => {
@@ -284,8 +260,6 @@ io.on("connection", (socket) => {
 
   // 로그아웃 시 유저 제거
   socket.on("logoutUser", (userId) => {
-    connectedUsers.delete(userId);
-
     for (const [roomId, viewers] of roomViewers.entries()) {
       viewers.delete(userId);
       if (viewers.size === 0) {
@@ -293,20 +267,10 @@ io.on("connection", (socket) => {
         socket.leave(roomId);
       }
     }
-
-    updateUserList();
   });
 
   socket.on("disconnect", () => {
-    // connectedUsers에서 해당 유저를 찾아 제거
-    const disconnectedUser = [...connectedUsers.entries()].find(
-      ([id, userInfo]) => userInfo.socketId === socket.id
-    );
-
-    if (disconnectedUser) {
-      connectedUsers.delete(disconnectedUser[0]);
-      updateUserList();
-    }
+    console.log("disconnect");
   });
 });
 

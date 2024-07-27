@@ -877,9 +877,9 @@ module.exports = class PostService {
         attributes: ["id", "User1Join", "User2Join"],
       });
 
-      const chatRoomsWithUnReadCounts = await Promise.all(
+      const chatRoomsWithUnRead = await Promise.all(
         chatRooms.map(async (chatRoom) => {
-          const unReadMessageCount = await ChatMessage.count({
+          const unReadMessage = await ChatMessage.findAll({
             where: {
               ChatRoomId: chatRoom.id,
               isRead: false,
@@ -888,12 +888,12 @@ module.exports = class PostService {
 
           return {
             ...chatRoom.toJSON(),
-            UnReadMessages: unReadMessageCount,
+            UnReadMessages: unReadMessage,
           };
         })
       );
 
-      res.status(200).json(chatRoomsWithUnReadCounts);
+      res.status(200).json(chatRoomsWithUnRead);
     } catch (error) {
       console.error("Error fetching user chat rooms:", error);
       throw error;
