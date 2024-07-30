@@ -33,6 +33,7 @@ module.exports = class User extends Sequelize.Model {
     );
   }
   static associate(db) {
+    db.User.hasOne(db.Image);
     db.User.hasMany(db.Post, { foreignKey: "userIdx" });
     db.User.hasMany(db.Comment);
     db.User.belongsToMany(db.Post, {

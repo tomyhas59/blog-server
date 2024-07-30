@@ -73,20 +73,19 @@ module.exports = class PostService {
         });
 
         if (req.body.image) {
-          if (req.body.image) {
-            const imagePromises = Array.isArray(req.body.image)
-              ? req.body.image.map((image) => Image.create({ src: image }))
-              : [Image.create({ src: req.body.image })];
+          const imagePromises = Array.isArray(req.body.image)
+            ? req.body.image.map((image) => Image.create({ src: image }))
+            : [Image.create({ src: req.body.image })];
 
-            const imageResults = await Promise.allSettled(imagePromises);
+          const imageResults = await Promise.allSettled(imagePromises);
 
-            const successfulImages = imageResults
-              .filter((result) => result.status === "fulfilled")
-              .map((result) => result.value);
+          const successfulImages = imageResults
+            .filter((result) => result.status === "fulfilled")
+            .map((result) => result.value);
 
-            await post.addImages(successfulImages);
-          }
+          await post.addImages(successfulImages);
         }
+
         const fullPost = await Post.findOne({
           where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
           include: [
@@ -208,7 +207,11 @@ module.exports = class PostService {
       const posts = await Post.findAll({
         limit: 10,
         include: [
-          { model: User, attributes: ["id", "email", "nickname"] },
+          {
+            model: User,
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "email", "nickname"],
+          },
           { model: Image },
           {
             model: User,
@@ -259,7 +262,13 @@ module.exports = class PostService {
         where: {
           userIdx: userId,
         },
-        include: [{ model: User, attributes: ["id", "email", "nickname"] }],
+        include: [
+          {
+            model: User,
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "email", "nickname"],
+          },
+        ],
         order: [
           ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
         ],
@@ -360,11 +369,16 @@ module.exports = class PostService {
       const searchResults = await Post.findAll({
         where: whereCondition,
         include: [
-          { model: User, attributes: ["id", "email", "nickname"] },
+          {
+            model: User,
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "email", "nickname"],
+          },
           { model: Image },
           {
             model: User,
             as: "Likers",
+
             attributes: ["id", "nickname"],
           },
           {
@@ -407,7 +421,11 @@ module.exports = class PostService {
           "$User.nickname$": searchNickname,
         },
         include: [
-          { model: User, attributes: ["id", "email", "nickname"] },
+          {
+            model: User,
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "email", "nickname"],
+          },
           { model: Image },
           {
             model: User,

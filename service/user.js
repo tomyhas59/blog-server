@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
+const Image = require("../models/image");
 
 module.exports = class UserService {
   static async signUp(req, res, next) {
@@ -52,6 +53,7 @@ module.exports = class UserService {
             as: "Followings",
             attributes: ["id", "nickname"],
           },
+          { model: Image, attributes: ["src"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
@@ -94,6 +96,36 @@ module.exports = class UserService {
       next(err);
     }
   }
+  //-----------------------------------------------------------
+  static async createUserImage(req, res, next) {
+    try {
+      if (req.user.id) {
+        if (req.file) {
+          const existingImage = await Image.findOne({
+            where: { UserId: req.user.id },
+          });
+
+          if (existingImage) {
+            existingImage.src = req.file.filename;
+            await existingImage.save();
+
+            res.status(200).json(existingImage);
+          } else {
+            const newImage = await Image.create({
+              src: req.file.filename,
+              UserId: req.user.id,
+            });
+
+            res.status(200).json(newImage);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      next(err); //status 500임
+    }
+  }
+
   //-------------------------------------------------------------------
   static async refreshToken(req, res, next) {
     const refreshToken = req.cookies.refreshToken;
@@ -143,6 +175,7 @@ module.exports = class UserService {
             as: "Followings",
             attributes: ["id", "nickname"],
           },
+          { model: Image, attributes: ["src"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
