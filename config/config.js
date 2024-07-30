@@ -4,7 +4,6 @@ dotenv.config();
 
 module.exports = {
   development: {
-    port: 5432,
     port: process.env.DEV_DATABASE_PORT || 3306,
     host: process.env.DEV_DATABASE_HOST,
     database: process.env.DEV_DATABASE_NAME,
@@ -13,7 +12,6 @@ module.exports = {
     dialect: "mysql",
   },
   test: {
-    port: 5432,
     port: process.env.DEV_DATABASE_PORT || 3306,
     host: process.env.DEV_DATABASE_HOST,
     database: process.env.DEV_DATABASE_NAME,
@@ -22,7 +20,7 @@ module.exports = {
     dialect: "mysql",
   },
   production: {
-    port: 5432,
+    port: process.env.DATABASE_PORT || 5432,
     host: process.env.DATABASE_HOST,
     database: process.env.DATABASE_NAME,
     username: process.env.DATABASE_USER,
