@@ -12,6 +12,8 @@ router.post(
   upload.single("profileImage"),
   UserService.createUserImage
 );
+router.get("/profileImage", isLoggedIn, UserService.getUserImage);
+router.delete("/profileImage", isLoggedIn, UserService.removeUserImage);
 router.post("/logout", isLoggedIn, UserService.logOut);
 router.post("/refreshToken", UserService.refreshToken);
 router.get("/setUser", isLoggedIn, UserService.setUser);

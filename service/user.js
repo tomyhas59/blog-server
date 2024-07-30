@@ -2,6 +2,8 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const Image = require("../models/image");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = class UserService {
   static async signUp(req, res, next) {
@@ -106,6 +108,17 @@ module.exports = class UserService {
           });
 
           if (existingImage) {
+            const imagePath = path.join(
+              __dirname,
+              "..",
+              "uploads",
+              existingImage.src
+            );
+
+            if (fs.existsSync(imagePath)) {
+              fs.unlinkSync(imagePath);
+            }
+
             existingImage.src = req.file.filename;
             await existingImage.save();
 
@@ -123,6 +136,41 @@ module.exports = class UserService {
     } catch (err) {
       console.error(err);
       next(err); //status 500임
+    }
+  }
+  //-----------------------------------------------------------
+  static async getUserImage(req, res, next) {
+    try {
+      const image = await Image.findOne({ where: { UserId: req.user.id } });
+      if (image && image.src) {
+        res.status(200).json(image.src);
+      } else {
+        res.status(200).json(null);
+      }
+    } catch (err) {
+      console.error(err);
+      next(err);
+    }
+  }
+
+  //-----------------------------------------------------------
+  static async removeUserImage(req, res, next) {
+    try {
+      const image = await Image.findOne({ where: { UserId: req.user.id } });
+
+      if (image && image.src) {
+        const imagePath = path.join(__dirname, "../uploads", image.src);
+
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+        await Image.destroy({ where: { UserId: req.user.id } });
+
+        res.status(200).send("Image removed successfully.");
+      }
+    } catch (err) {
+      console.error(err);
+      next(err);
     }
   }
 
