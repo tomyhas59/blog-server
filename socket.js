@@ -141,7 +141,7 @@ module.exports = (server) => {
               roomViewers.delete(roomId);
             }
           }
-          io.to(roomId).emit("outRoom");
+          io.to(roomId).emit("outRoom", room);
           io.to(roomId).emit("systemMessage", systemMessage);
           io.emit("updateUserRoomList");
         }
