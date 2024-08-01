@@ -19,7 +19,7 @@ module.exports = class ChatRoom extends Sequelize.Model {
           defaultValue: true,
         },
         User2Join: {
-          type: Sequelize.INTEGER,
+          type: Sequelize.BOOLEAN,
           defaultValue: true,
         },
       },
