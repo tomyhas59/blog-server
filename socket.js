@@ -83,11 +83,11 @@ module.exports = (server) => {
       roomViewers.get(roomId).add(me?.id);
 
       socket.join(roomId);
-      socket.to(roomId).emit("joinRoom");
-      socket.emit("resetRead", roomId);
+      io.emit("resetRead", roomId);
+      io.emit("joinRoom");
     });
 
-    socket.on("leaveRoom", async (roomId, me) => {
+    socket.on("leaveRoom", (roomId, me) => {
       console.log(`${roomId}번 방 나감`, me.nickname);
       if (roomViewers.has(roomId)) {
         roomViewers.get(roomId).delete(me.id);
