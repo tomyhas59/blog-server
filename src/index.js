@@ -27,13 +27,13 @@ app.use(
 app.use(cookieParser());
 
 // uploads 폴더 생성
-const uploadDir = path.join(__dirname, "uploads");
+const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
 // image 저장 경로 설정----------------------------
-app.use("/", /*baseURL*/ express.static(path.join(__dirname, "uploads")));
+app.use("/", /*baseURL*/ express.static(path.join(__dirname, "../uploads")));
 app.use(
   morgan("dev"), //로그를 찍어줌 ,종류 dev(개발용), combined(배포용), common, short, tiny
   express.json(), //json req.body 데이터 읽는 것 허용
