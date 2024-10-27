@@ -14,7 +14,7 @@ export class ChatMessage
   extends Model<ChatMessageAttributes>
   implements ChatMessageAttributes
 {
-  public id?: number;
+  public id!: number;
   public content!: string;
   public isRead!: boolean;
   public ChatRoomId!: number;

@@ -10,7 +10,7 @@ import { Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
 
-module.exports = class PostService {
+export default class PostService {
   static async imageUpload(req: Request, res: Response) {
     console.log(req.files);
     res.json(req.files.map((v) => v.filename));
@@ -66,10 +66,12 @@ module.exports = class PostService {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      if (req.user.id) {
+      const user = req.user as User;
+
+      if (user.id) {
         const post = await Post.create({
           content: req.body.content,
-          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ req.user.id,
+          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ user.id,
           //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
         });
 
@@ -139,7 +141,7 @@ module.exports = class PostService {
         {
           where: {
             id: postId,
-            /*    userIdx: req.user.id, */
+            /*    userIdx: user.id, */
           },
         }
       );
@@ -159,12 +161,12 @@ module.exports = class PostService {
           )
         );
 
-        await post.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
+        await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
       }
 
       //addImgaes 한 다음 다시 호출
       const updatePost = await Post.findOne({
-        where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
+        where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
         include: [
           {
             model: Image,
@@ -250,20 +252,27 @@ module.exports = class PostService {
     }
   }
   //----------------------------------------------------------------------
-
-  static async getUserPosts(req: Request, res: Response, next: NextFunction) {
+  static async getUserPosts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const userId = req.query.userId;
 
       if (!userId) {
-        return res
-          .status(400)
-          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        return;
       }
+
+      // userId를 string으로 강제 변환
+      const validUserId = Array.isArray(userId)
+        ? userId[0]
+        : (userId as string);
 
       const posts = await Post.findAll({
         where: {
-          userIdx: userId,
+          userIdx: validUserId, // userIdx에 올바른 형식의 userId 전달
         },
         include: [
           {
@@ -272,10 +281,9 @@ module.exports = class PostService {
             attributes: ["id", "email", "nickname"],
           },
         ],
-        order: [
-          ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
-        ],
+        order: [["createdAt", "DESC"]], // 게시글을 내림차순으로 정렬
       });
+
       res.status(200).json(posts);
     } catch (error) {
       console.error(error);
@@ -289,19 +297,21 @@ module.exports = class PostService {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<void> {
     try {
       const userId = req.query.userId;
 
       if (!userId) {
-        return res
-          .status(400)
-          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        return;
       }
+      const validUserId = Array.isArray(userId)
+        ? Number(userId[0])
+        : Number(userId);
 
       const comments = await Comment.findAll({
         where: {
-          UserId: userId,
+          UserId: validUserId,
         },
         include: [{ model: Post, attributes: ["id"] }],
         order: [
@@ -311,7 +321,7 @@ module.exports = class PostService {
 
       const reComments = await ReComment.findAll({
         where: {
-          UserId: userId,
+          UserId: validUserId,
         },
         include: [{ model: Post, attributes: ["id"] }],
         order: [
@@ -333,11 +343,15 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async search(req: Request, res: Response, next: NextFunction) {
+  static async search(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const searchText = req.query.query;
-      const searchOption = req.query.option;
-      const whereCondition = {};
+      const searchText = req.query.query as string;
+      const searchOption = req.query.option as string;
+      const whereCondition: any = {};
 
       if (searchOption === "author") {
         whereCondition["$User.nickname$"] /*User 모델의 nickname 필드 참조 */ =
@@ -407,7 +421,8 @@ module.exports = class PostService {
       });
       if (searchResults.length === 0) {
         // 검색 결과가 없을 경우
-        return res.status(404).json("검색 결과를 찾을 수 없습니다.");
+        res.status(404).json("검색 결과를 찾을 수 없습니다.");
+        return;
       }
 
       res.status(200).json(searchResults);
@@ -419,7 +434,11 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async searchNickname(req: Request, res: Response, next: NextFunction) {
+  static async searchNickname(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const searchNickname = req.query.query;
 
@@ -458,7 +477,8 @@ module.exports = class PostService {
       });
       if (searchResults.length === 0) {
         // 검색 결과가 없을 경우
-        return res.status(404).json("작성한 게시글이 없습니다");
+        res.status(404).json("작성한 게시글이 없습니다");
+        return;
       }
 
       res.status(200).json(searchResults);
@@ -524,18 +544,25 @@ module.exports = class PostService {
   }
 
   //----------------------------------------------------------------------
-  static async commentCreate(req: Request, res: Response, next: NextFunction) {
+  static async commentCreate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
+      const user = req.user as User;
+
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
       if (!post) {
-        return res.status(403).send("존재하지 않는 게시글입니다");
+        res.status(403).send("존재하지 않는 게시글입니다");
+        return;
       }
       const comment = await Comment.create({
         content: req.body.content,
         PostId: parseInt(req.params.postId, 10),
-        UserId: req.user.id,
+        UserId: user.id,
       });
       const fullComment = await Comment.findOne({
         where: { id: comment.id },
@@ -575,7 +602,7 @@ module.exports = class PostService {
       });
 
       await Comment.destroy({
-        where: { id: commentId /*  UserId: req.user.id */ },
+        where: { id: commentId /*  UserId: user.id */ },
       });
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
@@ -618,25 +645,29 @@ module.exports = class PostService {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<void> {
     try {
+      const user = req.user as User;
+
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
       if (!post) {
-        return res.status(403).send("존재하지 않는 게시글입니다");
+        res.status(403).send("존재하지 않는 게시글입니다");
+        return;
       }
       const comment = await Comment.findOne({
         where: { id: req.params.commentId },
       });
       if (!comment) {
-        return res.status(403).send("존재하지 않는 댓글입니다");
+        res.status(403).send("존재하지 않는 댓글입니다");
+        return;
       }
       const reComment = await ReComment.create({
         PostId: post.id,
         content: req.body.content,
         CommentId: parseInt(req.params.commentId, 10),
-        UserId: req.user.id,
+        UserId: user.id,
       });
       const fullReComment = await ReComment.findOne({
         where: { id: reComment.id },
@@ -668,7 +699,7 @@ module.exports = class PostService {
       const commentId = req.params.commentId;
       const reCommentId = req.params.reCommentId;
       await ReComment.destroy({
-        where: { id: reCommentId /*  UserId: req.user.id */ },
+        where: { id: reCommentId /*  UserId: user.id */ },
       });
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
@@ -713,48 +744,63 @@ module.exports = class PostService {
     }
   }
   //-----------like----------------------------
-  static async postLike(req: Request, res: Response, next: NextFunction) {
+  static async postLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
+      const user = req.user as User;
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
       if (!post) {
-        return res.status(403).send("게시글이 존재하지 않습니다.");
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
       }
-      await post.addLikers(req.user.id);
+      await post.addLikers(user.id);
       res.json({
         PostId: post.id,
-        UserId: req.user.id,
-        nickname: req.user.nickname,
+        UserId: user.id,
+        nickname: user.nickname,
       });
     } catch (error) {
       console.error(error);
       next(error);
     }
   }
-  static async postUnLike(req: Request, res: Response, next: NextFunction) {
+  static async postUnLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
+      const user = req.user as User;
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
       if (!post) {
-        return res.status(403).send("게시글이 존재하지 않습니다.");
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
       }
-      await post.removeLikers(req.user.id);
-      res.status(200).json({ PostId: post.id, UserId: req.user.id });
+      await post.removeLikers(user.id);
+      res.status(200).json({ PostId: post.id, UserId: user.id });
     } catch (error) {
       console.error(error);
       next(error);
     }
   }
-  static async getLikedPosts(req: Request, res: Response, next: NextFunction) {
+  static async getLikedPosts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const userId = req.query.userId;
 
       if (!userId) {
-        return res
-          .status(400)
-          .json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
+        return;
       }
 
       const likedPosts = await Post.findAll({
@@ -777,16 +823,23 @@ module.exports = class PostService {
     }
   }
   //chat----------------------------------------------
-  static async createChatRoom(req: Request, res: Response, next: NextFunction) {
+  static async createChatRoom(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const user = req.user as User;
+
     const { user2Id } = req.body;
-    const user1Id = req.user.id;
+    const user1Id = user.id;
 
     try {
       const user1 = await User.findByPk(user1Id, { include: "User1Rooms" });
       const user2 = await User.findByPk(user2Id, { include: "User2Rooms" });
 
       if (!user1 || !user2) {
-        return res.status(404).json({ message: "유저를 찾을 수 없습니다" });
+        res.status(404).json({ message: "유저를 찾을 수 없습니다" });
+        return;
       }
       //이미 있으면 기존 채팅방 불러오기
       const existingChatRoom = await ChatRoom.findOne({
@@ -818,7 +871,8 @@ module.exports = class PostService {
         }
 
         await existingChatRoom.save();
-        return res.status(200).json(existingChatRoom);
+        res.status(200).json(existingChatRoom);
+        return;
       }
       //채팅방 새로 생성
       const chatRoom = await ChatRoom.create({
@@ -845,21 +899,28 @@ module.exports = class PostService {
         attributes: ["id", "User1Join", "User2Join"],
       });
 
-      return res.status(201).json(fullChatRoom);
+      res.status(201).json(fullChatRoom);
+      return;
     } catch (error) {
-      return res
+      res
         .status(500)
         .json({ message: "채팅 방을 생성하는 중에 오류가 발생했습니다." });
+      return;
     }
   }
 
   //get Chat-------------------------------------
-  static async getChatMessage(req: Request, res: Response, next: NextFunction) {
+  static async getChatMessage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const { roomId } = req.query;
 
-      if (!roomId) {
-        return res.status(404).json({ message: "roomId not found" });
+      if (!roomId || Array.isArray(roomId)) {
+        res.status(404).json({ message: "roomId not found" });
+        return;
       }
 
       // 채팅 메시지 가져오기
@@ -886,9 +947,14 @@ module.exports = class PostService {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<void> {
     try {
       const { userId } = req.query;
+
+      if (!userId || Array.isArray(userId)) {
+        res.status(400).json({ message: "Invalid userId" });
+        return;
+      }
 
       const chatRooms = await ChatRoom.findAll({
         where: {
@@ -945,22 +1011,25 @@ module.exports = class PostService {
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<void> {
     const { messageId } = req.params;
 
     try {
       const message = await ChatMessage.findByPk(messageId);
       if (!message) {
-        return res.status(404).json({ error: "Message not found" });
+        res.status(404).json({ error: "Message not found" });
+        return;
       }
 
       message.isRead = true;
       await message.save();
 
-      return res.json({ message: "Message marked as read" });
+      res.json({ message: "Message marked as read" });
+      return;
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Internal server error" });
+      return;
     }
   }
-};
+}

@@ -1,22 +1,31 @@
-import { DataTypes, Model, Sequelize } from "sequelize";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 import { Image } from "./image";
 import { Post } from "./post";
 import { Comment } from "./comment";
 import { ChatRoom } from "./chatRoom";
 import { ChatMessage } from "./chatMessage";
+
 interface UserAttributes {
-  id?: number;
+  id: number;
   email: string;
   nickname: string;
   password: string;
 }
 
-export class User extends Model<UserAttributes> implements UserAttributes {
-  public id?: number;
+// id는 선택적 속성이기 때문에, 'id'를 Optional로 설정
+interface UserCreationAttributes extends Optional<UserAttributes, "id"> {}
+
+export class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
+  public id!: number;
   public email!: string;
   public nickname!: string;
   public password!: string;
-
+  public addFollowings!: (follow: User) => Promise<void>;
+  public getFollowings!: () => Promise<User[]>;
+  public removeFollowings!: (unFollow: User) => Promise<void>;
   public static initModel(sequelize: Sequelize): typeof User {
     User.init(
       {
@@ -92,34 +101,5 @@ export class User extends Model<UserAttributes> implements UserAttributes {
     });
 
     User.hasMany(models.ChatMessage);
-  }
-  // 사용자에 의해 팔로우된 사용자들을 반환하는 메서드
-  public async getFollowings(): Promise<User[]> {
-    try {
-      const followings = await this.getFollowings(); // 현재 사용자의 팔로우 목록을 가져옴
-      return followings;
-    } catch (error) {
-      console.error("팔로우 목록 조회 오류:", error);
-      throw new Error("팔로우 목록을 가져오는 데 실패했습니다.");
-    }
-  }
-
-  // 팔로우할 사용자를 추가하는 메서드
-  public async addFollowings(followUser: User): Promise<void> {
-    try {
-      await this.addFollowings(followUser); // 실제 팔로우 관계 추가
-    } catch (error) {
-      console.error("팔로우 추가 오류:", error);
-      throw new Error("팔로우 추가에 실패했습니다.");
-    }
-  }
-
-  public async removeFollowings(unFollow: User) {
-    try {
-      await this.removeFollowings(unFollow); // 실제 팔로우 관계 추가
-    } catch (error) {
-      console.error("팔로우 추가 오류:", error);
-      throw new Error("팔로우 추가에 실패했습니다.");
-    }
   }
 }

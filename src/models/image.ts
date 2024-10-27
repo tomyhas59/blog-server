@@ -15,7 +15,7 @@ export class Image
   extends Model<ImageAttributes, ImageCreationAttributes>
   implements ImageAttributes
 {
-  public id?: number;
+  public id!: number;
   public src!: string;
   public PostId?: number;
   public UserId?: number;

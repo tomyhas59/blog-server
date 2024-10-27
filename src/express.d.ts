@@ -1,6 +1,11 @@
 // express/index.d.ts
 import * as express from "express";
-import { User } from "../models/user"; // User 모델의 경로를 맞추세요.
+
+interface User {
+  id: number;
+  email: string;
+  nickname: string;
+}
 
 declare global {
   namespace Express {

@@ -4,22 +4,45 @@ import { Post } from "./post";
 import { Comment } from "./comment";
 
 interface ReCommentAttributes {
+  id?: number;
   content: string;
+  UserId: number;
+  PostId?: number;
+  CommentId: number;
 }
 
 export class ReComment
   extends Model<ReCommentAttributes>
   implements ReCommentAttributes
 {
+  public id!: number;
   public content!: string;
+  public UserId!: number;
+  public PostId?: number;
+  public CommentId!: number;
 
   public static initModel(sequelize: Sequelize): typeof ReComment {
     ReComment.init(
       {
+        id: {
+          type: DataTypes.INTEGER,
+        },
         content: {
           type: DataTypes.TEXT,
           allowNull: false,
           comment: "리코멘트",
+        },
+        UserId: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
+        PostId: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
+        CommentId: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
         },
       },
       {

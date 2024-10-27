@@ -5,6 +5,7 @@ import { Image } from "../models/image";
 import fs from "fs";
 import path from "path";
 import { Request, Response, NextFunction, CookieOptions } from "express";
+import { exportJWK } from "jose";
 
 export default class UserService {
   // 회원가입 기능
@@ -12,7 +13,7 @@ export default class UserService {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<Response | undefined> {
+  ): Promise<void> {
     try {
       const exUser = await User.findOne({
         where: {
@@ -25,10 +26,12 @@ export default class UserService {
         },
       });
       if (exUser) {
-        return res.status(403).send("이미 사용 중인 이메일입니다.");
+        res.status(403).send("이미 사용 중인 이메일입니다.");
+        return;
       }
       if (exNickname) {
-        return res.status(403).send("이미 사용 중인 닉네임입니다.");
+        res.status(403).send("이미 사용 중인 닉네임입니다.");
+        return;
       }
       const hashedPassword = await bcrypt.hash(req.body.password, 10); // 패스워드 단방향 암호화
       await User.create({
@@ -44,7 +47,11 @@ export default class UserService {
   }
 
   // 로그인 기능
-  static async logIn(req: Request, res: Response, next: NextFunction) {
+  static async logIn(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const user = await User.findOne({
         where: {
@@ -67,7 +74,8 @@ export default class UserService {
       });
 
       if (!user) {
-        return res.status(401).send("가입되지 않은 이메일입니다.");
+        res.status(401).send("가입되지 않은 이메일입니다.");
+        return;
       }
 
       const isValidPassword = await bcrypt.compare(
@@ -76,7 +84,8 @@ export default class UserService {
       );
 
       if (!isValidPassword) {
-        return res.status(401).send("비밀번호가 틀렸습니다.");
+        res.status(401).send("비밀번호가 틀렸습니다.");
+        return;
       }
 
       const accessToken = jwt.sign(
@@ -113,10 +122,11 @@ export default class UserService {
     next: NextFunction
   ) {
     try {
-      if (req.user.id) {
+      const user = req.user as User;
+      if (user.id) {
         if (req.file) {
           const existingImage = await Image.findOne({
-            where: { UserId: req.user.id },
+            where: { UserId: user.id },
           });
 
           if (existingImage) {
@@ -138,7 +148,7 @@ export default class UserService {
           } else {
             const newImage = await Image.create({
               src: req.file.filename,
-              UserId: req.user.id,
+              UserId: user.id,
             });
 
             res.status(200).json(newImage);
@@ -154,7 +164,8 @@ export default class UserService {
   // 사용자 이미지 조회
   static async getUserImage(req: Request, res: Response, next: NextFunction) {
     try {
-      const image = await Image.findOne({ where: { UserId: req.user.id } });
+      const user = req.user as User;
+      const image = await Image.findOne({ where: { UserId: user.id } });
       if (image && image.src) {
         res.status(200).json(image.src);
       } else {
@@ -173,7 +184,8 @@ export default class UserService {
     next: NextFunction
   ) {
     try {
-      const image = await Image.findOne({ where: { UserId: req.user.id } });
+      const user = req.user as User;
+      const image = await Image.findOne({ where: { UserId: user.id } });
 
       if (image && image.src) {
         const imagePath = path.join(__dirname, "../uploads", image.src);
@@ -181,7 +193,7 @@ export default class UserService {
         if (fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
         }
-        await Image.destroy({ where: { UserId: req.user.id } });
+        await Image.destroy({ where: { UserId: user.id } });
 
         res.status(200).send("이미지가 성공적으로 삭제되었습니다.");
       }
@@ -192,10 +204,17 @@ export default class UserService {
   }
 
   // 리프레시 토큰 갱신
-  static async refreshToken(req: Request, res: Response, next: NextFunction) {
+  static async refreshToken(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const refreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) return res.sendStatus(401);
+    if (!refreshToken) {
+      res.sendStatus(401);
+      return;
+    }
 
     try {
       const decoded = jwt.verify(
@@ -205,7 +224,8 @@ export default class UserService {
       const user = await User.findOne({ where: { id: decoded.id } });
 
       if (!user) {
-        return res.status(401).send("유효하지 않은 리프레시 토큰");
+        res.status(401).send("유효하지 않은 리프레시 토큰");
+        return;
       }
 
       const newAccessToken = jwt.sign(
@@ -230,8 +250,9 @@ export default class UserService {
   // 사용자 정보 설정
   static async setUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await User.findOne({
-        where: { email: req.user.email },
+      const user = req.user as User;
+      const existingUser = await User.findOne({
+        where: { email: user.email },
         include: [
           {
             model: User,
@@ -247,7 +268,7 @@ export default class UserService {
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
-      res.json(user);
+      res.json(existingUser);
     } catch (err) {
       console.error(err);
       next(err);
@@ -272,8 +293,13 @@ export default class UserService {
   }
 
   // 팔로우 기능
-  static async follow(req: Request, res: Response, next: NextFunction) {
-    const userId = req.user.id;
+  static async follow(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const user = req.user as User;
+    const userId = user.id;
     const followId = req.params.id;
 
     try {
@@ -281,7 +307,8 @@ export default class UserService {
       const follow = await User.findByPk(followId);
 
       if (!user || !follow) {
-        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        return;
       }
 
       const existingFollow = await (user.getFollowings as any)({
@@ -289,24 +316,32 @@ export default class UserService {
       });
 
       if (existingFollow.length > 0) {
-        return res.status(400).json({ message: "이미 팔로우했습니다." });
+        res.status(400).json({ message: "이미 팔로우했습니다." });
+        return;
       }
 
       await user.addFollowings(follow);
 
-      return res.status(200).json({
+      res.status(200).json({
         UserId: follow.id,
         Nickname: follow.nickname,
       });
+      return;
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "내부 서버 오류" });
+      res.status(500).json({ message: "내부 서버 오류" });
+      exportJWK;
     }
   }
 
   // 언팔로우 기능
-  static async unFollow(req: Request, res: Response, next: NextFunction) {
-    const userId = req.user.id;
+  static async unFollow(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const user = req.user as User;
+    const userId = user.id;
     const unFollowId = req.params.id;
 
     try {
@@ -314,7 +349,8 @@ export default class UserService {
       const unFollow = await User.findByPk(unFollowId);
 
       if (!user || !unFollow) {
-        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        return;
       }
 
       const existingFollow = await (user.getFollowings as any)({
@@ -322,17 +358,20 @@ export default class UserService {
       });
 
       if (existingFollow.length === 0) {
-        return res.status(400).json({ message: "팔로우하지 않았습니다." });
+        res.status(400).json({ message: "팔로우하지 않았습니다." });
+        return;
       }
 
       await user.removeFollowings(unFollow);
-      return res.status(200).json({
+      res.status(200).json({
         UserId: unFollow.id,
         Nickname: unFollow.nickname,
       });
+      return;
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "내부 서버 오류" });
+      res.status(500).json({ message: "내부 서버 오류" });
+      return;
     }
   }
 }

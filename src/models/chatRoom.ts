@@ -3,11 +3,11 @@ import { User } from "./user"; // User 모델 경로 수정 필요
 import { ChatMessage } from "./chatMessage"; // ChatMessage 모델 경로 수정 필요
 
 interface ChatRoomAttributes {
-  id: number;
+  id?: number;
   User1Id: number;
   User2Id: number;
-  User1Join: boolean;
-  User2Join: boolean;
+  User1Join?: boolean;
+  User2Join?: boolean;
 }
 
 export class ChatRoom

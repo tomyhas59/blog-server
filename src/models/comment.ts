@@ -4,22 +4,39 @@ import { Post } from "./post";
 import { ReComment } from "./recomment";
 
 interface CommentAttributes {
+  id?: number;
   content: string;
+  UserId: number;
+  PostId: number;
 }
 
 export class Comment
   extends Model<CommentAttributes>
   implements CommentAttributes
 {
+  public id!: number;
   public content!: string;
+  public UserId!: number;
+  public PostId!: number;
 
   public static initModel(sequelize: Sequelize): typeof Comment {
     Comment.init(
       {
+        id: {
+          type: DataTypes.INTEGER,
+        },
         content: {
           type: DataTypes.TEXT,
           allowNull: false,
           comment: "코멘트",
+        },
+        UserId: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
+        PostId: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
         },
       },
       {

@@ -15,9 +15,13 @@ export class Post
   extends Model<PostAttributes, PostCreationAttributes>
   implements PostAttributes
 {
-  public id?: number;
+  public id!: number;
   public content!: string;
   public userIdx?: number;
+
+  public addImages!: (images: Image[]) => Promise<void>;
+  public removeLikers!: (UserId: number) => Promise<void>;
+  public addLikers!: (UserId: number) => Promise<void>;
 
   public static initModel(sequelize: Sequelize): typeof Post {
     Post.init(
