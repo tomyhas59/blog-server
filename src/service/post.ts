@@ -10,10 +10,15 @@ import { Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
 
+interface File {
+  filename: string;
+}
+
 export default class PostService {
   static async imageUpload(req: Request, res: Response) {
-    console.log(req.files);
-    res.json(req.files.map((v) => v.filename));
+    const files = req.files as File[];
+    console.log(files);
+    res.json(files?.map((file) => file.filename));
   }
 
   static async imageRemove(req: Request, res: Response, next: NextFunction) {

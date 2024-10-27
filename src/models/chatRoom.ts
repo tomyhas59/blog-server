@@ -25,6 +25,9 @@ export class ChatRoom
       {
         id: {
           type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false,
         },
         User1Id: {
           type: DataTypes.INTEGER,

@@ -26,6 +26,12 @@ export class Post
   public static initModel(sequelize: Sequelize): typeof Post {
     Post.init(
       {
+        id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false,
+        },
         content: {
           type: DataTypes.TEXT,
           allowNull: false,

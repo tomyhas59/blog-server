@@ -25,6 +25,9 @@ export class ChatMessage
       {
         id: {
           type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false,
         },
         content: {
           type: DataTypes.TEXT,

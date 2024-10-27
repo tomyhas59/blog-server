@@ -23,6 +23,12 @@ export class Image
   public static initModel(sequelize: Sequelize): typeof Image {
     Image.init(
       {
+        id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false,
+        },
         src: {
           type: DataTypes.STRING(200),
           allowNull: false,

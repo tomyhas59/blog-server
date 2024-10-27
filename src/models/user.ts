@@ -31,6 +31,9 @@ export class User
       {
         id: {
           type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false,
         },
         email: {
           type: DataTypes.STRING(30),
