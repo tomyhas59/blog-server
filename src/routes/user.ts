@@ -1,8 +1,9 @@
-const express = require("express");
+import express from "express";
+import { isLoggedIn, isNotLoggedIn } from "./middlewares";
+import UserService from "../service/user";
+import upload from "./multer";
+
 const router = express.Router();
-const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
-const UserService = require("../service/user");
-const upload = require("./multer");
 
 router.post("/signup", UserService.signUp);
 router.post("/login", isNotLoggedIn, UserService.logIn);
@@ -20,4 +21,4 @@ router.get("/setUser", isLoggedIn, UserService.setUser);
 router.patch("/:id/follow", isLoggedIn, UserService.follow);
 router.delete("/:id/follow", isLoggedIn, UserService.unFollow);
 
-module.exports = router;
+export default router;

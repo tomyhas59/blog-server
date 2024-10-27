@@ -1,12 +1,18 @@
-const bcrypt = require("bcrypt");
-const User = require("../models/user");
-const jwt = require("jsonwebtoken");
-const Image = require("../models/image");
-const fs = require("fs");
-const path = require("path");
+import bcrypt from "bcrypt";
+import { User } from "../models/user";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { Image } from "../models/image";
+import fs from "fs";
+import path from "path";
+import { Request, Response, NextFunction, CookieOptions } from "express";
 
-module.exports = class UserService {
-  static async signUp(req, res, next) {
+export default class UserService {
+  // 회원가입 기능
+  static async signUp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | undefined> {
     try {
       const exUser = await User.findOne({
         where: {
@@ -24,21 +30,21 @@ module.exports = class UserService {
       if (exNickname) {
         return res.status(403).send("이미 사용 중인 닉네임입니다.");
       }
-      const hashedPassword = await bcrypt.hash(req.body.password, 10); //패스워드 단방향 암호화
+      const hashedPassword = await bcrypt.hash(req.body.password, 10); // 패스워드 단방향 암호화
       await User.create({
         email: req.body.email,
         nickname: req.body.nickname,
         password: hashedPassword,
       });
-      res.status(200).send("ok"); //200 성공, 201 잘 생성됨
+      res.status(200).send("ok"); // 200 성공
     } catch (err) {
       console.error(err);
-      next(err); //status 500임
+      next(err); // status 500
     }
   }
-  //----------------------------------------------------------------------
 
-  static async logIn(req, res, next) {
+  // 로그인 기능
+  static async logIn(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await User.findOne({
         where: {
@@ -75,19 +81,20 @@ module.exports = class UserService {
 
       const accessToken = jwt.sign(
         { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET as string,
         { expiresIn: "15m" }
       );
       const refreshToken = jwt.sign(
         { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET as string,
         { expiresIn: "7d" }
       );
 
-      const cookieOptions =
-        process.env.NODE_ENV === "production"
-          ? { httpOnly: true, secure: true, sameSite: "None" }
-          : { httpOnly: true, sameSite: "Lax" };
+      const cookieOptions: CookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "None", "Lax", "Strict" 중 하나로 설정
+      };
 
       res.cookie("accessToken", accessToken, cookieOptions);
       res.cookie("refreshToken", refreshToken, cookieOptions);
@@ -98,8 +105,13 @@ module.exports = class UserService {
       next(err);
     }
   }
-  //-----------------------------------------------------------
-  static async createUserImage(req, res, next) {
+
+  // 사용자 이미지 생성
+  static async createUserImage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       if (req.user.id) {
         if (req.file) {
@@ -135,11 +147,12 @@ module.exports = class UserService {
       }
     } catch (err) {
       console.error(err);
-      next(err); //status 500임
+      next(err); // status 500
     }
   }
-  //-----------------------------------------------------------
-  static async getUserImage(req, res, next) {
+
+  // 사용자 이미지 조회
+  static async getUserImage(req: Request, res: Response, next: NextFunction) {
     try {
       const image = await Image.findOne({ where: { UserId: req.user.id } });
       if (image && image.src) {
@@ -153,8 +166,12 @@ module.exports = class UserService {
     }
   }
 
-  //-----------------------------------------------------------
-  static async removeUserImage(req, res, next) {
+  // 사용자 이미지 삭제
+  static async removeUserImage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const image = await Image.findOne({ where: { UserId: req.user.id } });
 
@@ -166,7 +183,7 @@ module.exports = class UserService {
         }
         await Image.destroy({ where: { UserId: req.user.id } });
 
-        res.status(200).send("Image removed successfully.");
+        res.status(200).send("이미지가 성공적으로 삭제되었습니다.");
       }
     } catch (err) {
       console.error(err);
@@ -174,14 +191,17 @@ module.exports = class UserService {
     }
   }
 
-  //-------------------------------------------------------------------
-  static async refreshToken(req, res, next) {
+  // 리프레시 토큰 갱신
+  static async refreshToken(req: Request, res: Response, next: NextFunction) {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) return res.sendStatus(401);
 
     try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.JWT_SECRET as string
+      ) as JwtPayload;
       const user = await User.findOne({ where: { id: decoded.id } });
 
       if (!user) {
@@ -190,14 +210,14 @@ module.exports = class UserService {
 
       const newAccessToken = jwt.sign(
         { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET as string,
         { expiresIn: "15m" }
       );
 
       res.cookie("accessToken", newAccessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
 
       res.status(200).json({ accessToken: newAccessToken });
@@ -206,11 +226,11 @@ module.exports = class UserService {
       res.status(401).send("유효하지 않은 리프레시 토큰");
     }
   }
-  //----------------------------------------------------
-  static async setUser(req, res, next) {
+
+  // 사용자 정보 설정
+  static async setUser(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await User.findOne({
-        //middleware isLoggedIn으로  req.user = decoded로 저장된 데이터 활용
         where: { email: req.user.email },
         include: [
           {
@@ -233,13 +253,14 @@ module.exports = class UserService {
       next(err);
     }
   }
-  //----------------------------------------------------------------------
-  static async logOut(req, res, next) {
+
+  // 로그아웃 기능
+  static async logOut(req: Request, res: Response, next: NextFunction) {
     try {
       const cookieOptions =
         process.env.NODE_ENV === "production"
-          ? { httpOnly: true, secure: true, sameSite: "None" }
-          : { httpOnly: true, sameSite: "Lax" };
+          ? { httpOnly: true, secure: true, sameSite: "none" as const }
+          : { httpOnly: true, sameSite: "lax" as const };
 
       res.clearCookie("accessToken", cookieOptions);
       res.clearCookie("refreshToken", cookieOptions);
@@ -249,8 +270,9 @@ module.exports = class UserService {
       next(err);
     }
   }
-  //----------------------------------------------------------------------
-  static async follow(req, res, next) {
+
+  // 팔로우 기능
+  static async follow(req: Request, res: Response, next: NextFunction) {
     const userId = req.user.id;
     const followId = req.params.id;
 
@@ -259,15 +281,15 @@ module.exports = class UserService {
       const follow = await User.findByPk(followId);
 
       if (!user || !follow) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
       }
 
-      const existingFollow = await user.getFollowings({
+      const existingFollow = await (user.getFollowings as any)({
         where: { id: followId },
       });
 
       if (existingFollow.length > 0) {
-        return res.status(400).json({ message: "이미 팔로우했습니다" });
+        return res.status(400).json({ message: "이미 팔로우했습니다." });
       }
 
       await user.addFollowings(follow);
@@ -278,11 +300,12 @@ module.exports = class UserService {
       });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "내부 서버 오류" });
     }
   }
 
-  static async unFollow(req, res, next) {
+  // 언팔로우 기능
+  static async unFollow(req: Request, res: Response, next: NextFunction) {
     const userId = req.user.id;
     const unFollowId = req.params.id;
 
@@ -291,16 +314,25 @@ module.exports = class UserService {
       const unFollow = await User.findByPk(unFollowId);
 
       if (!user || !unFollow) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
       }
 
-      await user.removeFollowings(unFollow.id);
+      const existingFollow = await (user.getFollowings as any)({
+        where: { id: unFollowId },
+      });
+
+      if (existingFollow.length === 0) {
+        return res.status(400).json({ message: "팔로우하지 않았습니다." });
+      }
+
+      await user.removeFollowings(unFollow);
       return res.status(200).json({
         UserId: unFollow.id,
+        Nickname: unFollow.nickname,
       });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "내부 서버 오류" });
     }
   }
-};
+}

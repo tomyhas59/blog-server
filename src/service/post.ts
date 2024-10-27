@@ -1,21 +1,22 @@
-const Post = require("../models/post");
-const User = require("../models/user");
-const Comment = require("../models/comment");
-const ReComment = require("../models/recomment");
-const Image = require("../models/image");
-const fs = require("fs");
-const path = require("path");
-const { Op } = require("sequelize");
-const ChatRoom = require("../models/chatRoom");
-const ChatMessage = require("../models/chatMessage");
+import { Request, Response, NextFunction } from "express";
+import { Post } from "../models/post";
+import { User } from "../models/user";
+import { Comment } from "../models/comment";
+import { ReComment } from "../models/recomment";
+import { Image } from "../models/image";
+import fs from "fs";
+import path from "path";
+import { Op } from "sequelize";
+import { ChatRoom } from "../models/chatRoom";
+import { ChatMessage } from "../models/chatMessage";
 
 module.exports = class PostService {
-  static async imageUpload(req, res) {
+  static async imageUpload(req: Request, res: Response) {
     console.log(req.files);
     res.json(req.files.map((v) => v.filename));
   }
 
-  static async imageRemove(req, res, next) {
+  static async imageRemove(req: Request, res: Response, next: NextFunction) {
     try {
       const filename = req.params.filename;
       const filePath = path.join(__dirname, "..", "uploads", filename);
@@ -29,7 +30,7 @@ module.exports = class PostService {
     }
   }
 
-  static async imageDelete(req, res, next) {
+  static async imageDelete(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
       const filename = req.params.filename;
@@ -63,7 +64,7 @@ module.exports = class PostService {
     }
   }
 
-  static async create(req, res, next) {
+  static async create(req: Request, res: Response, next: NextFunction) {
     try {
       if (req.user.id) {
         const post = await Post.create({
@@ -74,7 +75,7 @@ module.exports = class PostService {
 
         if (req.body.image) {
           const imagePromises = Array.isArray(req.body.image)
-            ? req.body.image.map((image) => Image.create({ src: image }))
+            ? req.body.image.map((image: any) => Image.create({ src: image }))
             : [Image.create({ src: req.body.image })];
 
           const imageResults = await Promise.allSettled(imagePromises);
@@ -126,7 +127,7 @@ module.exports = class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async update(req, res, next) {
+  static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
 
@@ -153,7 +154,9 @@ module.exports = class PostService {
 
       if (req.body.imagePaths) {
         const images = await Promise.all(
-          req.body.imagePaths.map((filename) => Image.create({ src: filename }))
+          req.body.imagePaths.map((filename: string) =>
+            Image.create({ src: filename })
+          )
         );
 
         await post.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
@@ -202,7 +205,7 @@ module.exports = class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async readAll(req, res, next) {
+  static async readAll(req: Request, res: Response, next: NextFunction) {
     try {
       const posts = await Post.findAll({
         limit: 10,
@@ -248,7 +251,7 @@ module.exports = class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async getUserPosts(req, res, next) {
+  static async getUserPosts(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.query.userId;
 
@@ -282,7 +285,11 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async getUserComments(req, res, next) {
+  static async getUserComments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const userId = req.query.userId;
 
@@ -326,7 +333,7 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async search(req, res, next) {
+  static async search(req: Request, res: Response, next: NextFunction) {
     try {
       const searchText = req.query.query;
       const searchOption = req.query.option;
@@ -412,7 +419,7 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async searchNickname(req, res, next) {
+  static async searchNickname(req: Request, res: Response, next: NextFunction) {
     try {
       const searchNickname = req.query.query;
 
@@ -463,7 +470,7 @@ module.exports = class PostService {
 
   //----------------------------------------------------------------------
 
-  static async delete(req, res, next) {
+  static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
 
@@ -517,7 +524,7 @@ module.exports = class PostService {
   }
 
   //----------------------------------------------------------------------
-  static async commentCreate(req, res, next) {
+  static async commentCreate(req: Request, res: Response, next: NextFunction) {
     try {
       const post = await Post.findOne({
         where: { id: req.params.postId },
@@ -556,7 +563,7 @@ module.exports = class PostService {
   }
 
   //----------------------------------------------------------------------
-  static async commentDelete(req, res, next) {
+  static async commentDelete(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
@@ -581,7 +588,7 @@ module.exports = class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async commentUpdate(req, res, next) {
+  static async commentUpdate(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
@@ -607,7 +614,11 @@ module.exports = class PostService {
     }
   }
   //----------------------------------------------------------------------
-  static async ReCommentCreate(req, res, next) {
+  static async ReCommentCreate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const post = await Post.findOne({
         where: { id: req.params.postId },
@@ -647,7 +658,11 @@ module.exports = class PostService {
     }
   }
   //----------------------------------------------------------------------
-  static async reCommentDelete(req, res, next) {
+  static async reCommentDelete(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
@@ -667,7 +682,11 @@ module.exports = class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async reCommentUpdate(req, res, next) {
+  static async reCommentUpdate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
@@ -694,7 +713,7 @@ module.exports = class PostService {
     }
   }
   //-----------like----------------------------
-  static async postLike(req, res, next) {
+  static async postLike(req: Request, res: Response, next: NextFunction) {
     try {
       const post = await Post.findOne({
         where: { id: req.params.postId },
@@ -713,7 +732,7 @@ module.exports = class PostService {
       next(error);
     }
   }
-  static async postUnLike(req, res, next) {
+  static async postUnLike(req: Request, res: Response, next: NextFunction) {
     try {
       const post = await Post.findOne({
         where: { id: req.params.postId },
@@ -728,7 +747,7 @@ module.exports = class PostService {
       next(error);
     }
   }
-  static async getLikedPosts(req, res, next) {
+  static async getLikedPosts(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.query.userId;
 
@@ -758,7 +777,7 @@ module.exports = class PostService {
     }
   }
   //chat----------------------------------------------
-  static async createChatRoom(req, res, next) {
+  static async createChatRoom(req: Request, res: Response, next: NextFunction) {
     const { user2Id } = req.body;
     const user1Id = req.user.id;
 
@@ -835,7 +854,7 @@ module.exports = class PostService {
   }
 
   //get Chat-------------------------------------
-  static async getChatMessage(req, res, next) {
+  static async getChatMessage(req: Request, res: Response, next: NextFunction) {
     try {
       const { roomId } = req.query;
 
@@ -863,7 +882,11 @@ module.exports = class PostService {
     }
   }
   //find chat room---------------------------------
-  static async findUserChatRooms(req, res, next) {
+  static async findUserChatRooms(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { userId } = req.query;
 
@@ -918,7 +941,11 @@ module.exports = class PostService {
     }
   }
   //read chat message---------------------------------
-  static async readChatMessges(req, res, next) {
+  static async readChatMessges(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     const { messageId } = req.params;
 
     try {
