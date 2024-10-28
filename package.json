@@ -6,7 +6,7 @@
   "scripts": {
      "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
- "start": "npm run build && NODE_ENV=production node dist/index.js",
+ "start": "npm run build && NODE_ENV=production node src/index.js",
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts"
   },
   "author": "",
