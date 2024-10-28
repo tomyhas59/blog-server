@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
+     "outDir": "./dist",
     "module": "commonjs",
     "target": "ES6",
+     "rootDir": "./src",
     "moduleResolution": "node",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
