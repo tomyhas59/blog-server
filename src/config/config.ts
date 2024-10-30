@@ -37,7 +37,7 @@ const config: Config = {
     database: process.env.DEV_DATABASE_NAME!,
     username: process.env.DEV_DATABASE_USER!,
     password: process.env.DEV_DATABASE_PASSWORD!,
-    dialect: "mysql",
+    dialect: "mariadb",
     ssl: false, // ssl을 필요에 따라 설정
   },
   test: {
@@ -46,7 +46,7 @@ const config: Config = {
     database: process.env.DEV_DATABASE_NAME!,
     username: process.env.DEV_DATABASE_USER!,
     password: process.env.DEV_DATABASE_PASSWORD!,
-    dialect: "mysql",
+    dialect: "mariadb",
     ssl: false, // ssl을 필요에 따라 설정
   },
   production: {
