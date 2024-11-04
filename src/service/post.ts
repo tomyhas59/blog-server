@@ -24,7 +24,7 @@ export default class PostService {
   static async imageRemove(req: Request, res: Response, next: NextFunction) {
     try {
       const filename = req.params.filename;
-      const filePath = path.join(__dirname, "..", "uploads", filename);
+      const filePath = path.join(__dirname, "../../uploads", filename);
 
       // 이미지 파일 삭제
       fs.unlinkSync(filePath);
