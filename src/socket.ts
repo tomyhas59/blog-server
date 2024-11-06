@@ -87,7 +87,7 @@ export default (server: Server) => {
         {
           where: {
             ChatRoomId: roomId,
-            UserId: { [Op.ne]: me?.id },
+            UserId: { [Op.ne]: me?.id }, //ne: not equal, 현재 사용자가 아닌 다른 사용자가 보낸 메시지
             isRead: false,
           },
         }
