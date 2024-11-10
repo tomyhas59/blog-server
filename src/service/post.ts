@@ -233,11 +233,18 @@ export default class PostService {
             include: [
               {
                 model: ReComment,
-                include: [{ model: User, attributes: ["id", "nickname"] }],
+                include: [
+                  {
+                    model: User,
+                    include: [{ model: Image, attributes: ["src"] }],
+                    attributes: ["id", "nickname"],
+                  },
+                ],
                 attributes: ["id", "content", "createdAt"],
               },
               {
                 model: User, // 댓글 작성자
+                include: [{ model: Image, attributes: ["src"] }],
                 attributes: ["id", "nickname"],
               },
             ],
