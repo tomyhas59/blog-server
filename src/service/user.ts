@@ -132,8 +132,7 @@ export default class UserService {
           if (existingImage) {
             const imagePath = path.join(
               __dirname,
-              "..",
-              "uploads",
+              "../../uploads",
               existingImage.src
             );
 

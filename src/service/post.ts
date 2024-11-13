@@ -48,7 +48,7 @@ export default class PostService {
       });
 
       for (const image of images) {
-        const imagePaths = path.join(__dirname, "..", "uploads", image.src);
+        const imagePaths = path.join(__dirname, "../../uploads", image.src);
 
         try {
           fs.unlinkSync(imagePaths);
@@ -411,22 +411,29 @@ export default class PostService {
           {
             model: User,
             as: "Likers",
-
             attributes: ["id", "nickname"],
           },
           {
             model: Comment,
             include: [
               {
-                model: ReComment,
-                include: [{ model: User, attributes: ["id", "nickname"] }],
-                attributes: ["id", "content"],
-              },
-              {
                 model: User, //댓글 작성자
+                include: [{ model: Image, attributes: ["src"] }],
                 attributes: ["id", "nickname"],
               },
+              {
+                model: ReComment,
+                include: [
+                  {
+                    model: User,
+                    include: [{ model: Image, attributes: ["src"] }],
+                    attributes: ["id", "nickname"],
+                  },
+                ],
+                attributes: ["id", "content"],
+              },
             ],
+            attributes: ["id", "content"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -527,7 +534,7 @@ export default class PostService {
 
       images.forEach(async (image) => {
         const filename = image.src;
-        const filePath = path.join(__dirname, "..", "uploads", filename);
+        const filePath = path.join(__dirname, "../../uploads", filename);
 
         try {
           // 이미지 파일 삭제
@@ -581,6 +588,7 @@ export default class PostService {
         include: [
           {
             model: User,
+            include: [{ model: Image, attributes: ["src"] }],
             attributes: ["id", "nickname"],
           },
           {
@@ -686,6 +694,7 @@ export default class PostService {
         include: [
           {
             model: User,
+            include: [{ model: Image, attributes: ["src"] }],
             attributes: ["id", "nickname"],
           },
           {
