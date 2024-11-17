@@ -108,7 +108,11 @@ export default class UserService {
       res.cookie("accessToken", accessToken, cookieOptions);
       res.cookie("refreshToken", refreshToken, cookieOptions);
 
-      res.status(200).json(user);
+      //user.toJSON()을 호출하여 순수 JSON 객체 생성
+      //password를 제외
+      const { password, ...userWithoutPassword } = user.toJSON();
+
+      res.status(200).json(userWithoutPassword);
     } catch (err) {
       console.error(err);
       next(err);
@@ -187,7 +191,7 @@ export default class UserService {
       const image = await Image.findOne({ where: { UserId: user.id } });
 
       if (image && image.src) {
-        const imagePath = path.join(__dirname, "../uploads", image.src);
+        const imagePath = path.join(__dirname, "../../uploads", image.src);
 
         if (fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
