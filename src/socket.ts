@@ -34,6 +34,34 @@ export default (server: Server) => {
     },
   });
 
+  const handleSystemMessage = async (
+    roomId: number,
+    userId: number,
+    content: string
+  ) => {
+    const message = await ChatMessage.create({
+      content,
+      UserId: userId,
+      ChatRoomId: roomId,
+      isRead: true,
+    });
+    io.to(roomId.toString()).emit("systemMessage", message);
+  };
+
+  const handleRoomViewerUpdate = (
+    roomId: number,
+    userId: number,
+    isJoining: boolean
+  ) => {
+    if (!roomViewers[roomId]) roomViewers[roomId] = new Set();
+    if (isJoining) {
+      roomViewers[roomId].add(userId);
+    } else {
+      roomViewers[roomId].delete(userId);
+      if (roomViewers[roomId].size === 0) delete roomViewers[roomId];
+    }
+  };
+
   io.on("connection", (socket: Socket) => {
     socket.on("loginUser", (userInfo: UserInfo) => {
       console.log("채팅방 로그인", userInfo);
@@ -43,37 +71,26 @@ export default (server: Server) => {
       console.log("채팅방 생성");
 
       const fullChatRoom = await ChatRoom.findOne({
-        where: {
-          id: roomId,
-        },
+        where: { id: roomId },
         include: [
-          {
-            model: User,
-            as: "User1",
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: User,
-            as: "User2",
-            attributes: ["id", "nickname"],
-          },
+          { model: User, as: "User1", attributes: ["id", "nickname"] },
+          { model: User, as: "User2", attributes: ["id", "nickname"] },
         ],
         attributes: ["id", "User1Join", "User2Join"],
       });
+
+      if (!fullChatRoom) return;
 
       const messageCount = await ChatMessage.count({
         where: { ChatRoomId: roomId },
       });
 
       if (messageCount > 0) {
-        const systemMessage = await ChatMessage.create({
-          content: `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`,
-          UserId: joinRoomUser.id,
-          ChatRoomId: roomId,
-          isRead: true,
-        });
-
-        io.to(roomId.toString()).emit("systemMessage", systemMessage);
+        await handleSystemMessage(
+          roomId,
+          joinRoomUser.id,
+          `${joinRoomUser.nickname}님이 들어왔습니다. systemMessage`
+        );
       }
 
       io.emit("newRoom", fullChatRoom);
@@ -93,10 +110,7 @@ export default (server: Server) => {
         }
       );
 
-      if (!roomViewers[roomId]) {
-        roomViewers[roomId] = new Set();
-      }
-      roomViewers[roomId].add(me.id);
+      handleRoomViewerUpdate(roomId, me.id, true);
 
       socket.join(roomId.toString());
       io.emit("resetRead", roomId);
@@ -105,58 +119,43 @@ export default (server: Server) => {
 
     socket.on("leaveRoom", (roomId: number, me: UserInfo) => {
       console.log(`${roomId}번 방 나감`, me.nickname);
-      if (roomViewers[roomId]) {
-        roomViewers[roomId].delete(me.id);
-        if (roomViewers[roomId].size === 0) {
-          delete roomViewers[roomId];
-        }
-      }
-
+      handleRoomViewerUpdate(roomId, me.id, false);
       socket.leave(roomId.toString());
     });
 
     socket.on("outRoom", async (roomId: number, leaveRoomUser: UserInfo) => {
       try {
         const room = await ChatRoom.findByPk(roomId);
+        if (!room) return;
 
-        if (room) {
-          if (room.User1Id === leaveRoomUser.id) {
-            room.User1Join = false;
-            if (!room.User2Join) {
-              await ChatMessage.destroy({ where: { ChatRoomId: room.id } });
-              await room.destroy();
-              io.emit("updateUserRoomList");
-              return;
-            } else {
-              await room.save();
-            }
-          } else if (room.User2Id === leaveRoomUser.id) {
-            room.User2Join = false;
-            if (!room.User1Join) {
-              await ChatMessage.destroy({ where: { ChatRoomId: room.id } });
-              await room.destroy();
-              io.emit("updateUserRoomList");
-              return;
-            } else {
-              await room.save();
-            }
+        if (room.User1Id === leaveRoomUser.id) {
+          room.User1Join = false;
+          if (!room.User2Join) {
+            await ChatMessage.destroy({ where: { ChatRoomId: room.id } });
+            await room.destroy();
+            io.emit("updateUserRoomList");
+            return;
+          } else {
+            await room.save();
           }
-
-          const systemMessage = await ChatMessage.create({
-            content: `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`,
-            UserId: leaveRoomUser.id,
-            ChatRoomId: roomId,
-            isRead: true,
-          });
-
-          if (roomViewers[roomId]) {
-            roomViewers[roomId].delete(leaveRoomUser.id);
-            if (roomViewers[roomId].size === 0) {
-              delete roomViewers[roomId];
-            }
+        } else if (room.User2Id === leaveRoomUser.id) {
+          room.User2Join = false;
+          if (!room.User1Join) {
+            await ChatMessage.destroy({ where: { ChatRoomId: room.id } });
+            await room.destroy();
+            io.emit("updateUserRoomList");
+            return;
+          } else {
+            await room.save();
           }
+          await handleSystemMessage(
+            roomId,
+            leaveRoomUser.id,
+            `${leaveRoomUser.nickname}님이 나갔습니다. systemMessage`
+          );
+          handleRoomViewerUpdate(roomId, leaveRoomUser.id, false);
           io.to(roomId.toString()).emit("outRoom", room);
-          io.to(roomId.toString()).emit("systemMessage", systemMessage);
+
           io.emit("updateUserRoomList");
         }
       } catch (err) {
@@ -181,24 +180,15 @@ export default (server: Server) => {
         });
 
         const unReadMessages = await ChatMessage.findAll({
-          where: {
-            ChatRoomId: roomId,
-            isRead: false,
-          },
-          include: {
-            model: User,
-            attributes: ["id", "nickname"],
-          },
+          where: { ChatRoomId: roomId, isRead: false },
+          include: { model: User, attributes: ["id", "nickname"] },
         });
 
         console.log(unReadMessages);
 
         const fullChatMessage = await ChatMessage.findOne({
           where: { id: chatMessage.id },
-          include: {
-            model: User,
-            attributes: ["id", "nickname"],
-          },
+          include: { model: User, attributes: ["id", "nickname"] },
         });
 
         io.to(roomId.toString()).emit("receiveMessage", fullChatMessage);
@@ -208,7 +198,7 @@ export default (server: Server) => {
 
     socket.on(
       "deletedMessage",
-      async (messageId: number, roomId: number, currentMessage: string) => {
+      async (messageId: number, currentMessage: string) => {
         await ChatMessage.update(
           { content: `${currentMessage} deletedMessage` },
           { where: { id: messageId } }
@@ -218,11 +208,8 @@ export default (server: Server) => {
 
     socket.on("logoutUser", (userId: number) => {
       for (const roomId in roomViewers) {
-        roomViewers[roomId].delete(userId);
-        if (roomViewers[roomId].size === 0) {
-          delete roomViewers[roomId];
-          socket.leave(roomId.toString());
-        }
+        handleRoomViewerUpdate(Number(roomId), userId, false);
+        socket.leave(roomId.toString());
       }
     });
 
