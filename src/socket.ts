@@ -216,6 +216,7 @@ export default (server: Server) => {
           where: { UserId: userId, type: "FOLLOW", isRead: false },
         }
       );
+      io.emit("updateNotification");
     });
 
     socket.on("logoutUser", (userId: number) => {
