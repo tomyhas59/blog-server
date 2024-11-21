@@ -20,5 +20,10 @@ router.post("/refreshToken", UserService.refreshToken);
 router.get("/setUser", isLoggedIn, UserService.setUser);
 router.patch("/:id/follow", isLoggedIn, UserService.follow);
 router.delete("/:id/follow", isLoggedIn, UserService.unFollow);
+router.get(
+  "/getNewFollowersCount",
+  isLoggedIn,
+  UserService.getNewFollowersCount
+);
 
 export default router;

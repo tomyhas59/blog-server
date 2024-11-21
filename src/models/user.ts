@@ -4,6 +4,7 @@ import { Post } from "./post";
 import { Comment } from "./comment";
 import { ChatRoom } from "./chatRoom";
 import { ChatMessage } from "./chatMessage";
+import { Notification } from "./notification";
 
 interface UserAttributes {
   id: number;
@@ -71,6 +72,7 @@ export class User
     ChatRoom: typeof ChatRoom;
     ChatMessage: typeof ChatMessage;
     User: typeof User;
+    Notification: typeof Notification;
   }) {
     User.hasOne(models.Image);
     User.hasMany(models.Post, { foreignKey: "userIdx" });
@@ -104,5 +106,7 @@ export class User
     });
 
     User.hasMany(models.ChatMessage);
+
+    User.hasMany(models.Notification);
   }
 }

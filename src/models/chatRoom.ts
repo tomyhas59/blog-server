@@ -1,6 +1,6 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
-import { User } from "./user"; // User 모델 경로 수정 필요
-import { ChatMessage } from "./chatMessage"; // ChatMessage 모델 경로 수정 필요
+import { User } from "./user";
+import { ChatMessage } from "./chatMessage";
 
 interface ChatRoomAttributes {
   id?: number;

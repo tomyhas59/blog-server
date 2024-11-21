@@ -4,6 +4,7 @@ import { Op } from "sequelize";
 import { ChatRoom } from "./models/chatRoom";
 import { User } from "./models/user";
 import { ChatMessage } from "./models/chatMessage";
+import { Notification } from "./models/notification";
 
 interface UserInfo {
   id: number;
@@ -205,6 +206,17 @@ export default (server: Server) => {
         );
       }
     );
+
+    socket.on("followNotiRead", async (userId: number) => {
+      await Notification.update(
+        {
+          isRead: true,
+        },
+        {
+          where: { UserId: userId, type: "FOLLOW", isRead: false },
+        }
+      );
+    });
 
     socket.on("logoutUser", (userId: number) => {
       for (const roomId in roomViewers) {

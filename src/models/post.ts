@@ -1,7 +1,7 @@
 import { DataTypes, Model, Sequelize, Optional } from "sequelize";
-import { User } from "./user"; // User 모델 경로 수정 필요
-import { Comment } from "./comment"; // Comment 모델 경로 수정 필요
-import { Image } from "./image"; // Image 모델 경로 수정 필요
+import { User } from "./user";
+import { Comment } from "./comment";
+import { Image } from "./image";
 
 interface PostAttributes {
   id?: number;

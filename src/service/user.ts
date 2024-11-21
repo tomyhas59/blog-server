@@ -6,6 +6,8 @@ import fs from "fs";
 import path from "path";
 import { Request, Response, NextFunction, CookieOptions } from "express";
 import { exportJWK } from "jose";
+import { Notification } from "./../models/notification";
+import { Op } from "sequelize";
 
 export default class UserService {
   // 회원가입 기능
@@ -323,6 +325,13 @@ export default class UserService {
         return;
       }
 
+      await Notification.create({
+        UserId: follow.id, // 팔로우 대상 유저에게 알림 전송
+        type: "FOLLOW",
+        message: `${user.nickname}님이 당신을 팔로우했습니다.`,
+        isRead: false,
+      });
+
       await user.addFollowings(follow);
 
       res.status(200).json({
@@ -365,6 +374,15 @@ export default class UserService {
         return;
       }
 
+      await Notification.destroy({
+        where: {
+          UserId: unFollow.id, // 팔로우를 받은 사람
+          message: {
+            [Op.like]: `%${user.nickname}%`,
+          },
+        },
+      });
+
       await user.removeFollowings(unFollow);
       res.status(200).json({
         UserId: unFollow.id,
@@ -375,6 +393,27 @@ export default class UserService {
       console.error(error);
       res.status(500).json({ message: "내부 서버 오류" });
       return;
+    }
+  }
+
+  static async getNewFollowersCount(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const userId = Number(req.query.userId);
+
+    try {
+      const newFollowsers = await Notification.count({
+        where: {
+          UserId: userId,
+          type: "FOLLOW",
+          isRead: false,
+        },
+      });
+      res.json(newFollowsers);
+    } catch (err) {
+      console.error(err);
     }
   }
 }
