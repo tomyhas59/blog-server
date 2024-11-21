@@ -273,7 +273,17 @@ export default class UserService {
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
-      res.json(existingUser);
+
+      if (!existingUser) {
+        res.status(401).send("유저 정보가 없습니다.");
+        return;
+      }
+
+      //user.toJSON()을 호출하여 순수 JSON 객체 생성
+      //password를 제외
+      const { password, ...userWithoutPassword } = existingUser.toJSON();
+
+      res.json(userWithoutPassword);
     } catch (err) {
       console.error(err);
       next(err);
