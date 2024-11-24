@@ -9,6 +9,7 @@ import path from "path";
 import { Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
+import { Notification } from "../models/notification";
 
 interface File {
   filename: string;
@@ -583,6 +584,18 @@ export default class PostService {
         PostId: parseInt(req.params.postId, 10),
         UserId: user.id,
       });
+
+      if (post.userIdx !== user.id) {
+        const message = `${user.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+
+        await Notification.create({
+          UserId: Number(post.userIdx),
+          type: "SYSTEM",
+          message: message,
+          isRead: false,
+        });
+      }
+
       const fullComment = await Comment.findOne({
         where: { id: comment.id },
         include: [
