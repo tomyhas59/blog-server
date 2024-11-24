@@ -107,6 +107,12 @@ export default class UserService {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "None", "Lax", "Strict" 중 하나로 설정
       };
 
+      req.user = {
+        id: user.id,
+        nickname: user.nickname,
+        email: user.email,
+      };
+
       res.cookie("accessToken", accessToken, cookieOptions);
       res.cookie("refreshToken", refreshToken, cookieOptions);
 

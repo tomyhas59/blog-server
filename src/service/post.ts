@@ -572,6 +572,8 @@ export default class PostService {
     try {
       const user = req.user as User;
 
+      const existingUser = await User.findByPk(user.id);
+
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
@@ -585,8 +587,8 @@ export default class PostService {
         UserId: user.id,
       });
 
-      if (post.userIdx !== user.id) {
-        const message = `${user.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+      if (existingUser && post.userIdx !== existingUser.id) {
+        const message = `${existingUser.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
 
         await Notification.create({
           UserId: Number(post.userIdx),
