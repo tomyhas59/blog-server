@@ -2,6 +2,7 @@ import { DataTypes, Model, Sequelize, Optional } from "sequelize";
 import { User } from "./user";
 import { Comment } from "./comment";
 import { Image } from "./image";
+import { ReComment } from "./recomment";
 
 interface PostAttributes {
   id?: number;
@@ -54,10 +55,12 @@ export class Post
     User: typeof User;
     Comment: typeof Comment;
     Image: typeof Image;
+    ReComment: typeof ReComment;
   }) {
     Post.belongsTo(models.User, { foreignKey: "userIdx" });
     Post.hasMany(models.Comment);
     Post.hasMany(models.Image);
+    Post.hasMany(models.ReComment);
     Post.belongsToMany(models.User, {
       through: "Like",
       as: "Likers",
