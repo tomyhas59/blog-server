@@ -364,91 +364,132 @@ export default class PostService {
     try {
       const searchText = req.query.query as string;
       const searchOption = req.query.option as string;
-      const whereCondition: any = {};
 
-      if (searchOption === "author") {
-        whereCondition["$User.nickname$"] /*User 모델의 nickname 필드 참조 */ =
-          {
-            [Op.like]: `%${searchText}%`, //searchText가 포함된 모든 항목 검색
+      // 공통 include 옵션
+      const getCommonInclude = () => [
+        {
+          model: User,
+          include: [{ model: Image, attributes: ["src"] }],
+          attributes: ["id", "email", "nickname"],
+        },
+        { model: Image },
+        {
+          model: User,
+          as: "Likers",
+          attributes: ["id", "nickname"],
+        },
+        {
+          model: Comment,
+          include: [
+            {
+              model: User, // 댓글 작성자
+              include: [{ model: Image, attributes: ["src"] }],
+              attributes: ["id", "nickname"],
+            },
+            {
+              model: ReComment,
+              include: [
+                {
+                  model: User,
+                  include: [{ model: Image, attributes: ["src"] }],
+                  attributes: ["id", "nickname"],
+                },
+              ],
+              attributes: ["id", "content"],
+            },
+          ],
+          attributes: ["id", "content"],
+        },
+      ];
+
+      // 검색 조건 설정
+      const buildWhereCondition = async (
+        searchOption: string,
+        searchText: string
+      ) => {
+        const whereCondition: any = {};
+
+        if (searchOption === "author") {
+          whereCondition["$User.nickname$"] = {
+            [Op.like]: `%${searchText}%`, // 검색 텍스트 포함된 작성자 검색
           };
-      } else if (searchOption === "content") {
-        whereCondition.content = {
-          [Op.like]: `%${searchText}%`,
-        };
-      } else if (searchOption === "all") {
-        whereCondition[Op.or] = [
-          {
-            content: {
-              [Op.like]: `%${searchText}%`,
-            },
-          },
-          {
-            "$User.nickname$": {
-              [Op.like]: `%${searchText}%`,
-            },
-          },
-          {
-            "$Comments.content$": {
-              [Op.like]: `%${searchText}%`,
-            },
-          },
-          {
-            "$Comments.ReComments.content$": {
-              [Op.like]: `%${searchText}%`,
-            },
-          },
-        ];
-      }
+        } else if (searchOption === "content") {
+          whereCondition.content = {
+            [Op.like]: `%${searchText}%`, // Post의 내용에서 검색
+          };
+        } else if (searchOption === "comment") {
+          const postIds = await Comment.findAll({
+            where: { content: { [Op.like]: `%${searchText}%` } },
+            attributes: ["PostId"],
+          }).then((comments) => comments.map((comment) => comment.PostId));
 
-      console.log(
-        whereCondition,
-        whereCondition["content"],
-        whereCondition["$User.nickname$"],
-        whereCondition["$Comments.content$"],
-        whereCondition["$Comments.ReComments.content$"]
+          const reCommentPostIds = await ReComment.findAll({
+            where: { content: { [Op.like]: `%${searchText}%` } },
+            attributes: ["PostId"],
+          }).then((reComments) =>
+            reComments.map((reComment) => reComment.PostId)
+          );
+
+          const allPostIds = [...new Set([...postIds, ...reCommentPostIds])]; // 중복 제거 후 포스트 ID 반환
+
+          whereCondition.id = {
+            [Op.in]: allPostIds, // 댓글이 포함된 게시글만 반환
+          };
+        } else if (searchOption === "all") {
+          whereCondition[Op.or] = [
+            {
+              content: {
+                [Op.like]: `%${searchText}%`, // Post의 내용에서 검색
+              },
+            },
+            {
+              "$User.nickname$": {
+                [Op.like]: `%${searchText}%`, // User 닉네임에서 검색
+              },
+            },
+            {
+              "$Comments.content$": {
+                [Op.like]: `%${searchText}%`, // 댓글 내용에서 검색
+              },
+            },
+            {
+              "$Comments.ReComments.content$": {
+                [Op.like]: `%${searchText}%`, // ReComment 내용에서 검색
+              },
+            },
+          ];
+        }
+
+        return whereCondition;
+      };
+
+      const whereCondition = await buildWhereCondition(
+        searchOption,
+        searchText
       );
+
+      if (searchOption === "comment") {
+        const searchResult = await Post.findAll({
+          where: { id: whereCondition.id },
+          include: getCommonInclude(),
+          order: [["createdAt", "DESC"]],
+        });
+
+        if (searchResult.length > 0) {
+          res.status(200).json(searchResult);
+        } else {
+          res.status(404).json("검색 결과를 찾을 수 없습니다.");
+        }
+        return;
+      }
 
       const searchResults = await Post.findAll({
         where: whereCondition,
-        include: [
-          {
-            model: User,
-            include: [{ model: Image, attributes: ["src"] }],
-            attributes: ["id", "email", "nickname"],
-          },
-          { model: Image },
-          {
-            model: User,
-            as: "Likers",
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: Comment,
-            include: [
-              {
-                model: User, //댓글 작성자
-                include: [{ model: Image, attributes: ["src"] }],
-                attributes: ["id", "nickname"],
-              },
-              {
-                model: ReComment,
-                include: [
-                  {
-                    model: User,
-                    include: [{ model: Image, attributes: ["src"] }],
-                    attributes: ["id", "nickname"],
-                  },
-                ],
-                attributes: ["id", "content"],
-              },
-            ],
-            attributes: ["id", "content"],
-          },
-        ],
+        include: getCommonInclude(),
         order: [["createdAt", "DESC"]],
       });
+
       if (searchResults.length === 0) {
-        // 검색 결과가 없을 경우
         res.status(404).json("검색 결과를 찾을 수 없습니다.");
         return;
       }
