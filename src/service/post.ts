@@ -363,7 +363,6 @@ export default class PostService {
   ): Promise<void> {
     try {
       const searchText = req.query.query as string;
-      const searchOption = req.query.option as string;
 
       // 공통 include 옵션
       const getCommonInclude = () => [
@@ -402,87 +401,42 @@ export default class PostService {
         },
       ];
 
-      // 검색 조건 설정
-      const buildWhereCondition = async (
-        searchOption: string,
-        searchText: string
-      ) => {
-        const whereCondition: any = {};
+      // 댓글과 대댓글에서 PostId를 가져오는 함수
+      const fetchPostIdsFromComments = async (searchText: string) => {
+        const commentPostIds = await Comment.findAll({
+          where: { content: { [Op.like]: `%${searchText}%` } },
+          attributes: ["PostId"],
+        }).then((comments) => comments.map((comment) => comment.PostId));
 
-        if (searchOption === "author") {
-          whereCondition["$User.nickname$"] = {
-            [Op.like]: `%${searchText}%`, // 검색 텍스트 포함된 작성자 검색
-          };
-        } else if (searchOption === "content") {
-          whereCondition.content = {
-            [Op.like]: `%${searchText}%`, // Post의 내용에서 검색
-          };
-        } else if (searchOption === "comment") {
-          const postIds = await Comment.findAll({
-            where: { content: { [Op.like]: `%${searchText}%` } },
-            attributes: ["PostId"],
-          }).then((comments) => comments.map((comment) => comment.PostId));
+        const reCommentPostIds = await ReComment.findAll({
+          where: { content: { [Op.like]: `%${searchText}%` } },
+          attributes: ["PostId"],
+        }).then((reComments) =>
+          reComments.map((reComment) => reComment.PostId)
+        );
 
-          const reCommentPostIds = await ReComment.findAll({
-            where: { content: { [Op.like]: `%${searchText}%` } },
-            attributes: ["PostId"],
-          }).then((reComments) =>
-            reComments.map((reComment) => reComment.PostId)
-          );
-
-          const allPostIds = [...new Set([...postIds, ...reCommentPostIds])]; // 중복 제거 후 포스트 ID 반환
-
-          whereCondition.id = {
-            [Op.in]: allPostIds, // 댓글이 포함된 게시글만 반환
-          };
-        } else if (searchOption === "all") {
-          whereCondition[Op.or] = [
-            {
-              content: {
-                [Op.like]: `%${searchText}%`, // Post의 내용에서 검색
-              },
-            },
-            {
-              "$User.nickname$": {
-                [Op.like]: `%${searchText}%`, // User 닉네임에서 검색
-              },
-            },
-            {
-              "$Comments.content$": {
-                [Op.like]: `%${searchText}%`, // 댓글 내용에서 검색
-              },
-            },
-            {
-              "$Comments.ReComments.content$": {
-                [Op.like]: `%${searchText}%`, // ReComment 내용에서 검색
-              },
-            },
-          ];
-        }
-
-        return whereCondition;
+        return [...new Set([...commentPostIds, ...reCommentPostIds])]; // 중복 제거
       };
 
-      const whereCondition = await buildWhereCondition(
-        searchOption,
-        searchText
-      );
+      // 댓글과 대댓글에서 검색된 PostId 가져오기
+      const postIdsFromComments = await fetchPostIdsFromComments(searchText);
 
-      if (searchOption === "comment") {
-        const searchResult = await Post.findAll({
-          where: { id: whereCondition.id },
-          include: getCommonInclude(),
-          order: [["createdAt", "DESC"]],
-        });
+      // 검색 조건 생성
+      const whereCondition: any = {
+        [Op.or]: [
+          {
+            content: { [Op.like]: `%${searchText}%` }, // 게시글 내용 검색
+          },
+          {
+            "$User.nickname$": { [Op.like]: `%${searchText}%` }, // 작성자 검색
+          },
+          {
+            id: { [Op.in]: postIdsFromComments }, // 댓글/대댓글 관련 PostId 추가
+          },
+        ],
+      };
 
-        if (searchResult.length > 0) {
-          res.status(200).json(searchResult);
-        } else {
-          res.status(404).json("검색 결과를 찾을 수 없습니다.");
-        }
-        return;
-      }
-
+      // 게시글 검색
       const searchResults = await Post.findAll({
         where: whereCondition,
         include: getCommonInclude(),
@@ -496,7 +450,7 @@ export default class PostService {
 
       res.status(200).json(searchResults);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       next(error);
     }
   }
