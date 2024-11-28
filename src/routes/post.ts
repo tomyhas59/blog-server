@@ -8,11 +8,8 @@ const router = express.Router();
 // 모든 게시글 조회
 router.get("/all", PostService.readAll);
 
-// 게시글 검색
+// 옵션별 게시글 검색
 router.get("/search", PostService.search);
-
-// 닉네임으로 게시글 검색
-router.get("/searchNickname", PostService.searchNickname);
 
 // 이미지 업로드
 router.post(

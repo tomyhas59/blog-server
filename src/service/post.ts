@@ -363,7 +363,9 @@ export default class PostService {
   ): Promise<void> {
     try {
       const searchText = req.query.query as string;
+      const searchOption = req.query.option as string;
 
+      console.log(searchText, searchOption);
       // 공통 include 옵션
       const getCommonInclude = () => [
         {
@@ -422,19 +424,34 @@ export default class PostService {
       const postIdsFromComments = await fetchPostIdsFromComments(searchText);
 
       // 검색 조건 생성
-      const whereCondition: any = {
-        [Op.or]: [
-          {
-            content: { [Op.like]: `%${searchText}%` }, // 게시글 내용 검색
-          },
-          {
-            "$User.nickname$": { [Op.like]: `%${searchText}%` }, // 작성자 검색
-          },
-          {
-            id: { [Op.in]: postIdsFromComments }, // 댓글/대댓글 관련 PostId 추가
-          },
-        ],
-      };
+      let whereCondition: any;
+
+      if (searchOption === "author") {
+        whereCondition = {
+          "$User.nickname$": { [Op.like]: `%${searchText}%` }, // 작성자 검색
+        };
+      } else if (searchOption === "content") {
+        whereCondition = {
+          content: { [Op.like]: `%${searchText}%` }, // 게시글 내용 검색
+        };
+      } else if (searchOption === "all") {
+        whereCondition = {
+          [Op.or]: [
+            {
+              "$User.nickname$": { [Op.like]: `%${searchText}%` },
+            },
+            {
+              content: { [Op.like]: `%${searchText}%` },
+            },
+            {
+              id: { [Op.in]: postIdsFromComments },
+            },
+          ],
+        };
+      } else {
+        res.status(400).json({ error: "잘못된 searchOption 입니다." });
+        return;
+      }
 
       // 게시글 검색
       const searchResults = await Post.findAll({
@@ -451,62 +468,6 @@ export default class PostService {
       res.status(200).json(searchResults);
     } catch (error) {
       console.error(error);
-      next(error);
-    }
-  }
-
-  //----------------------------------------------------------------------
-
-  static async searchNickname(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const searchNickname = req.query.query;
-
-      const searchResults = await Post.findAll({
-        where: {
-          "$User.nickname$": searchNickname,
-        },
-        include: [
-          {
-            model: User,
-            include: [{ model: Image, attributes: ["src"] }],
-            attributes: ["id", "email", "nickname"],
-          },
-          { model: Image },
-          {
-            model: User,
-            as: "Likers",
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: Comment,
-            include: [
-              {
-                model: ReComment,
-                include: [{ model: User, attributes: ["id", "nickname"] }],
-                attributes: ["id", "content"],
-              },
-              {
-                model: User, //댓글 작성자
-                attributes: ["id", "nickname"],
-              },
-            ],
-          },
-        ],
-        order: [["createdAt", "DESC"]],
-      });
-      if (searchResults.length === 0) {
-        // 검색 결과가 없을 경우
-        res.status(404).json("작성한 게시글이 없습니다");
-        return;
-      }
-
-      res.status(200).json(searchResults);
-    } catch (error) {
-      console.log(error);
       next(error);
     }
   }
