@@ -5,10 +5,10 @@ require("dotenv").config();
 const config = {
   development: {
     port: parseInt(process.env.DEV_DATABASE_PORT || "3306", 10),
-    host: process.env.DEV_DATABASE_HOST || "localhost", // Default host
-    database: process.env.DEV_DATABASE_NAME || "dev_db", // Default database name
-    username: process.env.DEV_DATABASE_USER || "root", // Default user
-    password: process.env.DEV_DATABASE_PASSWORD || "password", // Default password
+    host: process.env.DEV_DATABASE_HOST || "localhost",
+    database: process.env.DEV_DATABASE_NAME || "dev_db",
+    username: process.env.DEV_DATABASE_USER || "root",
+    password: process.env.DEV_DATABASE_PASSWORD || "password",
     dialect: "mariadb",
     ssl: false,
   },
