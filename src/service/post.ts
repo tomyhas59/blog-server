@@ -76,6 +76,7 @@ export default class PostService {
 
       if (user.id) {
         const post = await Post.create({
+          title: req.body.title,
           content: req.body.content,
           userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ user.id,
           //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
@@ -362,10 +363,11 @@ export default class PostService {
     next: NextFunction
   ): Promise<void> {
     try {
+      const postId = req.query.id;
       const searchText = req.query.query as string;
       const searchOption = req.query.option as string;
 
-      console.log(searchText, searchOption);
+      console.log(postId, searchText, searchOption);
       // 공통 include 옵션
       const getCommonInclude = () => [
         {
@@ -430,9 +432,13 @@ export default class PostService {
         whereCondition = {
           "$User.nickname$": { [Op.like]: `%${searchText}%` }, // 작성자 검색
         };
-      } else if (searchOption === "content") {
+      } else if (searchOption === "title") {
         whereCondition = {
-          content: { [Op.like]: `%${searchText}%` }, // 게시글 내용 검색
+          id: postId,
+        };
+      } else if (searchOption === "comment") {
+        whereCondition = {
+          id: postId,
         };
       } else if (searchOption === "all") {
         whereCondition = {
@@ -810,7 +816,7 @@ export default class PostService {
             attributes: ["id", "email", "nickname"],
           },
         ],
-        attributes: ["id", "content", "createdAt"],
+        attributes: ["id", "title", "createdAt"],
         order: [["createdAt", "DESC"]],
       });
 

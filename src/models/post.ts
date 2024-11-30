@@ -6,6 +6,7 @@ import { ReComment } from "./recomment";
 
 interface PostAttributes {
   id?: number;
+  title: string;
   content: string;
   userIdx?: number;
 }
@@ -17,6 +18,7 @@ export class Post
   implements PostAttributes
 {
   public id!: number;
+  public title!: string;
   public content!: string;
   public userIdx?: number;
 
@@ -32,6 +34,11 @@ export class Post
           autoIncrement: true,
           primaryKey: true,
           allowNull: false,
+        },
+        title: {
+          type: DataTypes.TEXT,
+          allowNull: false,
+          comment: "제목",
         },
         content: {
           type: DataTypes.TEXT,

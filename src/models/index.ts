@@ -8,6 +8,7 @@ import { Image } from "./image";
 import { ChatMessage } from "./chatMessage";
 import { ChatRoom } from "./chatRoom";
 import { Notification } from "./notification";
+import { Dialect } from "sequelize";
 
 const env = (process.env.NODE_ENV || "development") as
   | "development"
@@ -22,7 +23,7 @@ const sequelize = new Sequelize(
   {
     host: dbConfig.host,
     port: dbConfig.port,
-    dialect: dbConfig.dialect,
+    dialect: dbConfig.dialect as Dialect,
     ssl: dbConfig.ssl || false,
     dialectOptions: dbConfig.ssl
       ? { ssl: { require: true, rejectUnauthorized: false } }
