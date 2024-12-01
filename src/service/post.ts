@@ -143,7 +143,6 @@ export default class PostService {
       await Post.update(
         {
           content: req.body.content,
-          //body 뒤의 content는 action.data의 key
         },
         {
           where: {
@@ -180,7 +179,8 @@ export default class PostService {
           },
           {
             model: User, //게시글 작성자
-            attributes: ["id", "email", "nickname"],
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "nickname"],
           },
           {
             model: User, //좋아요 누른 사람
@@ -192,11 +192,18 @@ export default class PostService {
             include: [
               {
                 model: ReComment,
-                include: [{ model: User, attributes: ["id", "nickname"] }],
+                include: [
+                  {
+                    model: User,
+                    include: [{ model: Image, attributes: ["src"] }],
+                    attributes: ["id", "nickname"],
+                  },
+                ],
                 attributes: ["id", "content"],
               },
               {
                 model: User, //댓글 작성자
+                include: [{ model: Image, attributes: ["src"] }],
                 attributes: ["id", "nickname"],
               },
             ],
