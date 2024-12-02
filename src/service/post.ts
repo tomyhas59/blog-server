@@ -370,9 +370,9 @@ export default class PostService {
     next: NextFunction
   ): Promise<void> {
     try {
-      const postId = req.query.id;
+      const postId = req.query.postId;
       const searchText = req.query.query as string;
-      const searchOption = req.query.option as string;
+      const searchOption = req.query.searchOption as string;
 
       console.log(postId, searchText, searchOption);
       // 공통 include 옵션
