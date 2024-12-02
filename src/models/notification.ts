@@ -4,6 +4,7 @@ import { User } from "./user";
 interface NotificationAttributes {
   id: number;
   UserId: number;
+  PostId?: number;
   type: "FOLLOW" | "SYSTEM";
   message: string;
   isRead: boolean;
@@ -18,6 +19,7 @@ export class Notification
 {
   public id!: number;
   public UserId!: number;
+  public PostId?: number;
   public type!: "FOLLOW" | "SYSTEM";
   public message!: string;
   public isRead!: boolean;
@@ -33,6 +35,10 @@ export class Notification
         UserId: {
           type: DataTypes.INTEGER,
           allowNull: false,
+        },
+        PostId: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
         },
         type: {
           type: DataTypes.ENUM("FOLLOW", "SYSTEM"),

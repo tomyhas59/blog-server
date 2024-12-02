@@ -548,9 +548,10 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+      const postId = req.params.postId;
 
       const post = await Post.findOne({
-        where: { id: req.params.postId },
+        where: { id: postId },
       });
       if (!post) {
         res.status(403).send("존재하지 않는 게시글입니다");
@@ -558,7 +559,7 @@ export default class PostService {
       }
       const comment = await Comment.create({
         content: req.body.content,
-        PostId: parseInt(req.params.postId, 10),
+        PostId: parseInt(postId, 10),
         UserId: user.id,
       });
 
@@ -567,6 +568,7 @@ export default class PostService {
 
         await Notification.create({
           UserId: Number(post.userIdx),
+          PostId: Number(post.id),
           type: "SYSTEM",
           message: message,
           isRead: false,
