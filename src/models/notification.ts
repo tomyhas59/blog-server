@@ -1,10 +1,12 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./user";
+import { Post } from "./post";
 
 interface NotificationAttributes {
   id: number;
   UserId: number;
   PostId?: number;
+  CommentId?: number;
   type: "FOLLOW" | "SYSTEM";
   message: string;
   isRead: boolean;
@@ -20,6 +22,7 @@ export class Notification
   public id!: number;
   public UserId!: number;
   public PostId?: number;
+  public CommentId?: number;
   public type!: "FOLLOW" | "SYSTEM";
   public message!: string;
   public isRead!: boolean;
@@ -37,6 +40,10 @@ export class Notification
           allowNull: false,
         },
         PostId: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+        CommentId: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },
@@ -65,7 +72,8 @@ export class Notification
     return Notification;
   }
 
-  static associate(models: { User: typeof User }) {
+  static associate(models: { User: typeof User; Post: typeof Post }) {
     Notification.belongsTo(models.User, { foreignKey: "UserId" });
+    Notification.belongsTo(models.Post, { foreignKey: "PostId" });
   }
 }

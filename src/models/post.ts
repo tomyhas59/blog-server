@@ -3,6 +3,7 @@ import { User } from "./user";
 import { Comment } from "./comment";
 import { Image } from "./image";
 import { ReComment } from "./recomment";
+import { Notification } from "./notification";
 
 interface PostAttributes {
   id?: number;
@@ -63,11 +64,13 @@ export class Post
     Comment: typeof Comment;
     Image: typeof Image;
     ReComment: typeof ReComment;
+    Notification: typeof Notification;
   }) {
     Post.belongsTo(models.User, { foreignKey: "userIdx" });
     Post.hasMany(models.Comment);
     Post.hasMany(models.Image);
     Post.hasMany(models.ReComment);
+    Post.hasMany(models.Notification);
     Post.belongsToMany(models.User, {
       through: "Like",
       as: "Likers",

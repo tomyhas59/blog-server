@@ -299,8 +299,9 @@ export default class PostService {
           {
             model: User,
             include: [{ model: Image, attributes: ["src"] }],
-            attributes: ["id", "email", "nickname"],
+            attributes: ["id", "nickname"],
           },
+          { model: Notification, attributes: ["id", "message", "isRead"] },
         ],
         order: [["createdAt", "DESC"]], // 게시글을 내림차순으로 정렬
       });
@@ -548,6 +549,10 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+      const existingUser = await User.findByPk(user.id, {
+        attributes: ["id", "email", "nickname"],
+      });
+
       const postId = req.params.postId;
 
       const post = await Post.findOne({
@@ -563,12 +568,13 @@ export default class PostService {
         UserId: user.id,
       });
 
-      if (post.userIdx !== user.id) {
-        const message = `${user.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+      if (existingUser && post.userIdx !== existingUser.id) {
+        const message = `${existingUser.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
 
         await Notification.create({
           UserId: Number(post.userIdx),
           PostId: Number(post.id),
+          CommentId: Number(comment.id),
           type: "SYSTEM",
           message: message,
           isRead: false,
@@ -615,6 +621,12 @@ export default class PostService {
 
       await Comment.destroy({
         where: { id: commentId /*  UserId: user.id */ },
+      });
+
+      await Notification.destroy({
+        where: {
+          CommentId: commentId,
+        },
       });
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값

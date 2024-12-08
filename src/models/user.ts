@@ -106,7 +106,6 @@ export class User
     });
 
     User.hasMany(models.ChatMessage);
-
     User.hasMany(models.Notification);
   }
 }

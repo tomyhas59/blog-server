@@ -219,6 +219,19 @@ export default (server: Server) => {
       io.emit("updateNotification");
     });
 
+    socket.on("readComment", async (postId: number) => {
+      await Notification.update(
+        {
+          isRead: true,
+        },
+        {
+          where: {
+            PostId: postId,
+          },
+        }
+      );
+    });
+
     socket.on("logoutUser", (userId: number) => {
       for (const roomId in roomViewers) {
         handleRoomViewerUpdate(Number(roomId), userId, false);
