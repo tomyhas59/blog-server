@@ -5,8 +5,8 @@ import { Post } from "./post";
 interface NotificationAttributes {
   id: number;
   UserId: number;
-  PostId?: number;
-  CommentId?: number;
+  PostId: number;
+  CommentId: number;
   type: "FOLLOW" | "SYSTEM";
   message: string;
   isRead: boolean;
@@ -21,8 +21,8 @@ export class Notification
 {
   public id!: number;
   public UserId!: number;
-  public PostId?: number;
-  public CommentId?: number;
+  public PostId!: number;
+  public CommentId!: number;
   public type!: "FOLLOW" | "SYSTEM";
   public message!: string;
   public isRead!: boolean;
