@@ -71,6 +71,7 @@ export default class UserService {
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },
+          { model: Notification, attributes: ["id", "isRead"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
@@ -276,6 +277,7 @@ export default class UserService {
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },
+          { model: Notification, attributes: ["id", "isRead"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });

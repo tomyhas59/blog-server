@@ -230,6 +230,7 @@ export default (server: Server) => {
           },
         }
       );
+      io.emit("updateNotification");
     });
 
     socket.on("logoutUser", (userId: number) => {

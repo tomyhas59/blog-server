@@ -5,8 +5,9 @@ import { Post } from "./post";
 interface NotificationAttributes {
   id: number;
   UserId: number;
-  PostId: number;
-  CommentId: number;
+  PostId?: number;
+  CommentId?: number;
+  ReCommentId?: number;
   type: "FOLLOW" | "SYSTEM";
   message: string;
   isRead: boolean;
@@ -21,8 +22,9 @@ export class Notification
 {
   public id!: number;
   public UserId!: number;
-  public PostId!: number;
-  public CommentId!: number;
+  public PostId?: number;
+  public CommentId?: number;
+  public ReCommentId?: number;
   public type!: "FOLLOW" | "SYSTEM";
   public message!: string;
   public isRead!: boolean;
@@ -44,6 +46,10 @@ export class Notification
           allowNull: true,
         },
         CommentId: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+        ReCommentId: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },

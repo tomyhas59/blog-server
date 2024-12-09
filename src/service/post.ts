@@ -672,6 +672,9 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+      const existingUser = await User.findByPk(user.id, {
+        attributes: ["id", "email", "nickname"],
+      });
 
       const post = await Post.findOne({
         where: { id: req.params.postId },
@@ -680,19 +683,27 @@ export default class PostService {
         res.status(403).send("존재하지 않는 게시글입니다");
         return;
       }
-      const comment = await Comment.findOne({
-        where: { id: req.params.commentId },
-      });
-      if (!comment) {
-        res.status(403).send("존재하지 않는 댓글입니다");
-        return;
-      }
+
       const reComment = await ReComment.create({
         PostId: post.id,
         content: req.body.content,
         CommentId: parseInt(req.params.commentId, 10),
         UserId: user.id,
       });
+
+      if (existingUser && post.userIdx !== existingUser.id) {
+        const message = `${existingUser.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+
+        await Notification.create({
+          UserId: Number(post.userIdx),
+          PostId: Number(post.id),
+          ReCommentId: Number(reComment.id),
+          type: "SYSTEM",
+          message: message,
+          isRead: false,
+        });
+      }
+
       const fullReComment = await ReComment.findOne({
         where: { id: reComment.id },
         include: [
@@ -726,6 +737,13 @@ export default class PostService {
       await ReComment.destroy({
         where: { id: reCommentId /*  UserId: user.id */ },
       });
+
+      await Notification.destroy({
+        where: {
+          ReCommentId: commentId,
+        },
+      });
+
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
         CommentId: parseInt(commentId, 10),
