@@ -224,7 +224,7 @@ export default class PostService {
   static async readAll(req: Request, res: Response, next: NextFunction) {
     try {
       const posts = await Post.findAll({
-        limit: 10,
+        // limit: 10,
         include: [
           {
             model: User,
