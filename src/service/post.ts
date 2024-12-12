@@ -106,93 +106,6 @@ export default class PostService {
     }
   }
 
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const user = req.user as User;
-
-      if (user.id) {
-        const post = await Post.create({
-          title: req.body.title,
-          content: req.body.content,
-          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ user.id,
-          //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
-        });
-
-        if (req.body.image) {
-          const imagePromises = Array.isArray(req.body.image)
-            ? req.body.image.map((image: any) => Image.create({ src: image }))
-            : [Image.create({ src: req.body.image })];
-
-          const imageResults = await Promise.allSettled(imagePromises);
-
-          const successfulImages = imageResults
-            .filter((result) => result.status === "fulfilled")
-            .map((result) => result.value);
-
-          await post.addImages(successfulImages);
-        }
-
-        const fullPost = await Post.findOne({
-          where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
-          include: getCommonInclude(),
-        });
-        res.status(200).json(fullPost);
-      }
-    } catch (err) {
-      console.error(err);
-      next(err); //status 500임
-    }
-  }
-  //----------------------------------------------------------------------
-
-  static async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const postId = req.params.postId;
-
-      await Post.update(
-        {
-          content: req.body.content,
-        },
-        {
-          where: {
-            id: postId,
-            /*    userIdx: user.id, */
-          },
-        }
-      );
-      const post = await Post.findOne({
-        where: { id: postId },
-        include: [
-          {
-            model: Image,
-          },
-        ],
-      });
-
-      if (req.body.imagePaths) {
-        const images = await Promise.all(
-          req.body.imagePaths.map((filename: string) =>
-            Image.create({ src: filename })
-          )
-        );
-
-        await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
-      }
-
-      //addImgaes 한 다음 다시 호출
-      const updatePost = await Post.findOne({
-        where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
-        include: getCommonInclude(),
-      });
-      res.status(200).json({
-        PostId: parseInt(postId),
-        updatePost,
-      });
-    } catch (err) {
-      console.log(err);
-      next(err);
-    }
-  }
   //----------------------------------------------------------------------
 
   static async getPosts(req: Request, res: Response, next: NextFunction) {
@@ -342,7 +255,7 @@ export default class PostService {
       const postId = req.query.postId;
       const page = req.query.page;
       const limit = req.query.limit;
-      const searchText = req.query.query as string;
+      const searchText = req.query.searchText as string;
       const searchOption = req.query.searchOption as string;
       const offset = (Number(page) - 1) * Number(limit);
 
@@ -417,10 +330,99 @@ export default class PostService {
         return;
       }
 
-      res.status(200).json({ searchedPosts, totalSearchedPosts });
+      res.status(200).json({ searchedPosts, totalSearchedPosts, searchOption });
     } catch (error) {
       console.error(error);
       next(error);
+    }
+  }
+  //-------------------------------------------------------------
+
+  static async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = req.user as User;
+
+      if (user.id) {
+        const post = await Post.create({
+          title: req.body.title,
+          content: req.body.content,
+          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ user.id,
+          //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
+        });
+
+        if (req.body.image) {
+          const imagePromises = Array.isArray(req.body.image)
+            ? req.body.image.map((image: any) => Image.create({ src: image }))
+            : [Image.create({ src: req.body.image })];
+
+          const imageResults = await Promise.allSettled(imagePromises);
+
+          const successfulImages = imageResults
+            .filter((result) => result.status === "fulfilled")
+            .map((result) => result.value);
+
+          await post.addImages(successfulImages);
+        }
+
+        const fullPost = await Post.findOne({
+          where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
+          include: getCommonInclude(),
+        });
+        res.status(200).json(fullPost);
+      }
+    } catch (err) {
+      console.error(err);
+      next(err); //status 500임
+    }
+  }
+  //----------------------------------------------------------------------
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const postId = req.params.postId;
+
+      await Post.update(
+        {
+          content: req.body.content,
+        },
+        {
+          where: {
+            id: postId,
+            /*    userIdx: user.id, */
+          },
+        }
+      );
+      const post = await Post.findOne({
+        where: { id: postId },
+        include: [
+          {
+            model: Image,
+          },
+        ],
+      });
+
+      if (req.body.imagePaths) {
+        const images = await Promise.all(
+          req.body.imagePaths.map((filename: string) =>
+            Image.create({ src: filename })
+          )
+        );
+
+        await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
+      }
+
+      //addImgaes 한 다음 다시 호출
+      const updatePost = await Post.findOne({
+        where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
+        include: getCommonInclude(),
+      });
+      res.status(200).json({
+        PostId: parseInt(postId),
+        updatePost,
+      });
+    } catch (err) {
+      console.log(err);
+      next(err);
     }
   }
 

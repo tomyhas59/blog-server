@@ -8,6 +8,9 @@ const router = express.Router();
 // 모든 게시글 조회
 router.get("/posts", PostService.getPosts);
 
+//게시글 상세 조회
+router.get("/posts/:postId", PostService.getPost);
+
 // 옵션별 게시글 검색
 router.get("/search", PostService.search);
 
@@ -21,7 +24,6 @@ router.post(
 
 // 사용자의 게시글 조회
 router.get("/", isLoggedIn, PostService.getUserPosts);
-router.get("/getPost/:postId", PostService.getPost);
 
 // 사용자의 댓글 조회
 router.get("/comment", isLoggedIn, PostService.getUserComments);
