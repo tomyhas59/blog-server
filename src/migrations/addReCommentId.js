@@ -20,3 +20,4 @@ module.exports = {
 };
 
 //npx sequelize-cli db:migrate
+//$env:NODE_ENV="production"; npx sequelize-cli db:migrate

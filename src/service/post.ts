@@ -15,6 +15,42 @@ interface File {
   filename: string;
 }
 
+const getCommonInclude = () => [
+  {
+    model: User,
+    include: [{ model: Image, attributes: ["src"] }],
+    attributes: ["id", "email", "nickname"],
+  },
+  { model: Image },
+  {
+    model: User,
+    as: "Likers",
+    attributes: ["id", "nickname"],
+  },
+  {
+    model: Comment,
+    include: [
+      {
+        model: User, // 댓글 작성자
+        include: [{ model: Image, attributes: ["src"] }],
+        attributes: ["id", "nickname"],
+      },
+      {
+        model: ReComment,
+        include: [
+          {
+            model: User,
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "nickname"],
+          },
+        ],
+        attributes: ["id", "content", "createdAt"],
+      },
+    ],
+    attributes: ["id", "content", "createdAt"],
+  },
+];
+
 export default class PostService {
   static async imageUpload(req: Request, res: Response) {
     const files = req.files as File[];
@@ -98,34 +134,7 @@ export default class PostService {
 
         const fullPost = await Post.findOne({
           where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
-          include: [
-            {
-              model: Image,
-            },
-            {
-              model: User, //게시글 작성자
-              attributes: ["id", "email", "nickname"],
-            },
-            {
-              model: User, //좋아요 누른 사람
-              as: "Likers", //post.Likers.id 이런 식으로 불러옴
-              attributes: ["id", "nickname"],
-            },
-            {
-              model: Comment,
-              include: [
-                {
-                  model: ReComment,
-                  include: [{ model: User, attributes: ["id", "nickname"] }],
-                  attributes: ["id", "content"],
-                },
-                {
-                  model: User, //댓글 작성자
-                  attributes: ["id", "nickname"],
-                },
-              ],
-            },
-          ],
+          include: getCommonInclude(),
         });
         res.status(200).json(fullPost);
       }
@@ -173,42 +182,7 @@ export default class PostService {
       //addImgaes 한 다음 다시 호출
       const updatePost = await Post.findOne({
         where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
-        include: [
-          {
-            model: Image,
-          },
-          {
-            model: User, //게시글 작성자
-            include: [{ model: Image, attributes: ["src"] }],
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: User, //좋아요 누른 사람
-            as: "Likers", //post.Likers.id 이런 식으로 불러옴
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: Comment,
-            include: [
-              {
-                model: ReComment,
-                include: [
-                  {
-                    model: User,
-                    include: [{ model: Image, attributes: ["src"] }],
-                    attributes: ["id", "nickname"],
-                  },
-                ],
-                attributes: ["id", "content"],
-              },
-              {
-                model: User, //댓글 작성자
-                include: [{ model: Image, attributes: ["src"] }],
-                attributes: ["id", "nickname"],
-              },
-            ],
-          },
-        ],
+        include: getCommonInclude(),
       });
       res.status(200).json({
         PostId: parseInt(postId),
@@ -221,52 +195,46 @@ export default class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async readAll(req: Request, res: Response, next: NextFunction) {
+  static async getPosts(req: Request, res: Response, next: NextFunction) {
+    const { page = 1, limit = 10 } = req.query;
     try {
+      const offset = (Number(page) - 1) * Number(limit);
       const posts = await Post.findAll({
-        // limit: 10,
-        include: [
-          {
-            model: User,
-            include: [{ model: Image, attributes: ["src"] }],
-            attributes: ["id", "email", "nickname"],
-          },
-          { model: Image },
-          {
-            model: User,
-            as: "Likers",
-            attributes: ["id", "nickname"],
-          },
-          {
-            model: Comment,
-            include: [
-              {
-                model: ReComment,
-                include: [
-                  {
-                    model: User,
-                    include: [{ model: Image, attributes: ["src"] }],
-                    attributes: ["id", "nickname"],
-                  },
-                ],
-                attributes: ["id", "content", "createdAt"],
-              },
-              {
-                model: User, // 댓글 작성자
-                include: [{ model: Image, attributes: ["src"] }],
-                attributes: ["id", "nickname"],
-              },
-            ],
-            attributes: ["id", "content", "createdAt"],
-          },
-        ],
+        include: getCommonInclude(),
         order: [
           ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
           [Comment, "createdAt", "ASC"], // 댓글을 오름차순으로 정렬
           [Comment, ReComment, "createdAt", "ASC"], // 대댓글을 오름차순으로 정렬
         ],
+        limit: Number(limit),
+        offset: offset,
       });
-      res.status(200).json(posts);
+
+      const totalPosts = await Post.count();
+
+      res.status(200).json({
+        posts,
+        totalPosts,
+      });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  //--------------------------------------------------------------------
+  static async getPost(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const postId = Number(req.params.postId);
+
+      const post = await Post.findByPk(postId, {
+        include: getCommonInclude(),
+      });
+
+      res.status(200).json(post);
     } catch (error) {
       console.error(error);
       next(error);
@@ -372,46 +340,13 @@ export default class PostService {
   ): Promise<void> {
     try {
       const postId = req.query.postId;
+      const page = req.query.page;
+      const limit = req.query.limit;
       const searchText = req.query.query as string;
       const searchOption = req.query.searchOption as string;
+      const offset = (Number(page) - 1) * Number(limit);
 
-      console.log(postId, searchText, searchOption);
-      // 공통 include 옵션
-      const getCommonInclude = () => [
-        {
-          model: User,
-          include: [{ model: Image, attributes: ["src"] }],
-          attributes: ["id", "email", "nickname"],
-        },
-        { model: Image },
-        {
-          model: User,
-          as: "Likers",
-          attributes: ["id", "nickname"],
-        },
-        {
-          model: Comment,
-          include: [
-            {
-              model: User, // 댓글 작성자
-              include: [{ model: Image, attributes: ["src"] }],
-              attributes: ["id", "nickname"],
-            },
-            {
-              model: ReComment,
-              include: [
-                {
-                  model: User,
-                  include: [{ model: Image, attributes: ["src"] }],
-                  attributes: ["id", "nickname"],
-                },
-              ],
-              attributes: ["id", "content"],
-            },
-          ],
-          attributes: ["id", "content"],
-        },
-      ];
+      console.log(postId, searchText, searchOption, page, limit);
 
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
@@ -468,18 +403,21 @@ export default class PostService {
       }
 
       // 게시글 검색
-      const searchResults = await Post.findAll({
+      let searchedPosts = await Post.findAll({
         where: whereCondition,
         include: getCommonInclude(),
         order: [["createdAt", "DESC"]],
       });
 
-      if (searchResults.length === 0) {
+      const totalSearchedPosts = searchedPosts.length;
+      searchedPosts = searchedPosts.slice(offset, offset + Number(limit));
+
+      if (searchedPosts.length === 0) {
         res.status(404).json("검색 결과를 찾을 수 없습니다.");
         return;
       }
 
-      res.status(200).json(searchResults);
+      res.status(200).json({ searchedPosts, totalSearchedPosts });
     } catch (error) {
       console.error(error);
       next(error);
@@ -595,7 +533,13 @@ export default class PostService {
           },
           {
             model: ReComment,
-            include: [{ model: User, attributes: ["id", "nickname"] }],
+            include: [
+              {
+                model: User,
+                include: [{ model: Image, attributes: ["src"] }],
+                attributes: ["id", "nickname"],
+              },
+            ],
             attributes: ["id", "content"],
           },
         ],
@@ -740,7 +684,7 @@ export default class PostService {
 
       await Notification.destroy({
         where: {
-          ReCommentId: commentId,
+          ReCommentId: reCommentId,
         },
       });
 
