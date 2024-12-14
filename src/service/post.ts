@@ -253,13 +253,20 @@ export default class PostService {
   ): Promise<void> {
     try {
       const postId = req.query.postId;
-      const page = req.query.page;
-      const limit = req.query.limit;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
       const searchText = req.query.searchText as string;
       const searchOption = req.query.searchOption as string;
       const offset = (Number(page) - 1) * Number(limit);
 
-      console.log(postId, searchText, searchOption, page, limit);
+      console.log(
+        "-------------",
+        postId,
+        searchText,
+        searchOption,
+        page,
+        limit
+      );
 
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
