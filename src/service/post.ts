@@ -333,7 +333,7 @@ export default class PostService {
       searchedPosts = searchedPosts.slice(offset, offset + Number(limit));
 
       if (searchedPosts.length === 0) {
-        res.status(404).json("검색 결과를 찾을 수 없습니다.");
+        res.status(404).json(null);
         return;
       }
 
