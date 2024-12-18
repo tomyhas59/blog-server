@@ -310,6 +310,9 @@ export default class PostService {
               "$User.nickname$": { [Op.like]: `%${searchText}%` },
             },
             {
+              title: { [Op.like]: `%${searchText}%` },
+            },
+            {
               content: { [Op.like]: `%${searchText}%` },
             },
             {
