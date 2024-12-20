@@ -124,7 +124,7 @@ export default class PostService {
 
       // 인기순 정렬
       if (sortBy === "popular") {
-        const likeTable = isPostgres ? '"like"' : "`like`"; // PostgreSQL에서는 큰따옴표 사용
+        const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL에서는 큰따옴표 사용
         const postIdColumn = isPostgres ? '"PostId"' : "`PostId`";
 
         order = [
