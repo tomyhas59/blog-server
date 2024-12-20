@@ -120,7 +120,7 @@ export default class PostService {
         [Comment, ReComment, "createdAt", "ASC"],
       ];
 
-      const isPostgres = process.env.DB_DIALECT === "postgres";
+      const isPostgres = process.env.NODE_ENV === "production";
 
       // 인기순 정렬
       if (sortBy === "popular") {
