@@ -123,20 +123,20 @@ export default class PostService {
       const isPostgres = process.env.NODE_ENV === "production";
 
 // 인기순 정렬
-      if (sortBy === "popular") {
-        const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL에서는 큰따옴표 사용, MySQL은 백틱 사용
-        const postTable = isPostgres ? '"Post"' : "`Post`"; // PostgreSQL은 "Post", MySQL은 `Post`
+if (sortBy === "popular") {
+  const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL에서는 큰따옴표 사용, MySQL은 백틱 사용
+  const PostId = isPostgres ? '"PostId"' : "`PostId`";
 
-        order = [
-          [
-            literal(
-              `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.PostId = ${postTable}.id)`
-            ),
-            "DESC", // 좋아요 수 기준 내림차순
-          ],
-          ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
-        ];
-      }
+  order = [
+    [
+      literal(
+        `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${PostId} = Post.id)` 
+      ),
+      "DESC", // 좋아요 수 기준 내림차순
+    ],
+    ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
+  ];
+}
 
 
       const posts = await Post.findAll({
