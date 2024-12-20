@@ -6,7 +6,7 @@ import { ReComment } from "../models/recomment";
 import { Image } from "../models/image";
 import fs from "fs";
 import path from "path";
-import { Op } from "sequelize";
+import { literal, Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
 import { Notification } from "../models/notification";
@@ -109,16 +109,33 @@ export default class PostService {
   //----------------------------------------------------------------------
 
   static async getPosts(req: Request, res: Response, next: NextFunction) {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, sortBy = "recent" } = req.query;
+
     try {
       const offset = (Number(page) - 1) * Number(limit);
+
+      let order: any = [
+        ["createdAt", "DESC"], // 최신순 기본값
+        [Comment, "createdAt", "ASC"],
+        [Comment, ReComment, "createdAt", "ASC"],
+      ];
+
+      // 인기순 정렬
+      if (sortBy === "popular") {
+        order = [
+          [
+            literal(
+              "(SELECT COUNT(*) FROM `like` WHERE `like`.`PostId` = Post.id)"
+            ),
+            "DESC", // 좋아요 수 기준 내림차순
+          ],
+          ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
+        ];
+      }
+
       const posts = await Post.findAll({
         include: getCommonInclude(),
-        order: [
-          ["createdAt", "DESC"], // 게시글을 내림차순으로 정렬
-          [Comment, "createdAt", "ASC"], // 댓글을 오름차순으로 정렬
-          [Comment, ReComment, "createdAt", "ASC"], // 대댓글을 오름차순으로 정렬
-        ],
+        order,
         limit: Number(limit),
         offset: offset,
       });
