@@ -9,7 +9,7 @@ const config = {
     database: process.env.DEV_DATABASE_NAME || "dev_db",
     username: process.env.DEV_DATABASE_USER || "root",
     password: process.env.DEV_DATABASE_PASSWORD || "password",
-    dialect: "mariadb",
+    dialect: process.env.DEV_DATABASE_PASSWORD || "mariadb",
     ssl: false,
   },
   test: {
@@ -18,7 +18,7 @@ const config = {
     database: process.env.DEV_DATABASE_NAME || "",
     username: process.env.DEV_DATABASE_USER || "",
     password: process.env.DEV_DATABASE_PASSWORD || "",
-    dialect: "mariadb",
+    dialect: process.env.DEV_DATABASE_DIALECT || "mariadb",
     ssl: false,
   },
   production: {
@@ -27,7 +27,7 @@ const config = {
     database: process.env.DATABASE_NAME || "",
     username: process.env.DATABASE_USER || "",
     password: process.env.DATABASE_PASSWORD || "",
-    dialect: "postgres",
+    dialect: process.env.DATABASE_DIALECT || "postgres",
     ssl: true,
     dialectOptions: {
       ssl: {

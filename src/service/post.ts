@@ -120,12 +120,17 @@ export default class PostService {
         [Comment, ReComment, "createdAt", "ASC"],
       ];
 
+      const isPostgres = process.env.DB_DIALECT === "postgres";
+
       // 인기순 정렬
       if (sortBy === "popular") {
+        const likeTable = isPostgres ? '"like"' : "`like`"; // PostgreSQL에서는 큰따옴표 사용
+        const postIdColumn = isPostgres ? '"PostId"' : "`PostId`";
+
         order = [
           [
             literal(
-              "(SELECT COUNT(*) FROM `like` WHERE `like`.`PostId` = Post.id)"
+              `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${postIdColumn} = Post.id)`
             ),
             "DESC", // 좋아요 수 기준 내림차순
           ],
