@@ -108,62 +108,78 @@ export default class PostService {
 
   //----------------------------------------------------------------------
 
-static async getPosts(req: Request, res: Response, next: NextFunction) {
-  const { page = 1, limit = 10, sortBy = "recent" } = req.query;
+  static async getPosts(req: Request, res: Response, next: NextFunction) {
+    const { page = 1, limit = 10, sortBy = "recent" } = req.query;
 
-  try {
-    const offset = (Number(page) - 1) * Number(limit);
+    try {
+      const offset = (Number(page) - 1) * Number(limit);
 
-    // 기본 정렬 조건: 최신순
-    let order: any = [
-      ["createdAt", "DESC"], // 최신순 기본값
-      [Comment, "createdAt", "ASC"],
-      [Comment, ReComment, "createdAt", "ASC"],
-    ];
-
-    // 환경에 따른 PostgreSQL 여부 확인
-    const isPostgres = process.env.NODE_ENV === "production";
-
-    // 인기순 정렬
-    if (sortBy === "popular") {
-      const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
-      const PostId = isPostgres ? '"PostId"' : "`PostId`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
-      const postIdField = isPostgres ? '"Post"."id"' : "`Post`.`id`"; // Post.id에 대한 처리
-
-      // 인기순 정렬을 위한 서브쿼리 설정
-      order = [
-        [
-          literal(
-            // MySQL에서는 테이블 이름을 백틱(``)으로 감싸고, PostgreSQL에서는 큰따옴표(")로 감쌈
-            `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${PostId} = ${postIdField})`
-          ),
-          "DESC", // 좋아요 수 기준 내림차순
-        ],
-        ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
+      // 기본 정렬 조건: 최신순
+      let order: any = [
+        ["createdAt", "DESC"], // 최신순 기본값
+        [Comment, "createdAt", "ASC"],
+        [Comment, ReComment, "createdAt", "ASC"],
       ];
+
+      const isPostgres = process.env.NODE_ENV === "production";
+
+      // 인기순 정렬
+      if (sortBy === "popular") {
+        const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
+        const PostId = isPostgres ? '"PostId"' : "`PostId`";
+        const postIdField = isPostgres ? '"Post"."id"' : "`Post`.`id`"; // Post.id에 대한 처리
+
+        order = [
+          [
+            literal(
+              `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${PostId} = ${postIdField})`
+            ),
+            "DESC", // 좋아요 수 기준 내림차순
+          ],
+          ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
+          [Comment, "createdAt", "ASC"],
+          [Comment, ReComment, "createdAt", "ASC"],
+        ];
+      }
+
+      if (sortBy === "comment") {
+        const commentsTable = isPostgres ? '"Comments"' : "`comments`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
+        const PostId = isPostgres ? '"PostId"' : "`PostId`";
+        const postIdField = isPostgres ? '"Post"."id"' : "`Post`.`id`"; // Post.id에 대한 처리
+
+        order = [
+          [
+            literal(
+              `(SELECT COUNT(*) FROM ${commentsTable} WHERE ${commentsTable}.${PostId} = ${postIdField})`
+            ),
+            "DESC",
+          ],
+          ["createdAt", "DESC"],
+          [Comment, "createdAt", "ASC"],
+          [Comment, ReComment, "createdAt", "ASC"],
+        ];
+      }
+      // 데이터 조회
+      const posts = await Post.findAll({
+        include: getCommonInclude(),
+        order, // 동적으로 정렬 조건 적용
+        limit: Number(limit),
+        offset: offset,
+      });
+
+      // 전체 포스트 수 카운트
+      const totalPosts = await Post.count();
+
+      // 응답 반환
+      res.status(200).json({
+        posts,
+        totalPosts,
+      });
+    } catch (error) {
+      console.error(error);
+      next(error);
     }
-
-    // 데이터 조회
-    const posts = await Post.findAll({
-      include: getCommonInclude(),
-      order, // 동적으로 정렬 조건 적용
-      limit: Number(limit),
-      offset: offset,
-    });
-
-    // 전체 포스트 수 카운트
-    const totalPosts = await Post.count();
-
-    // 응답 반환
-    res.status(200).json({
-      posts,
-      totalPosts,
-    });
-  } catch (error) {
-    console.error(error);
-    next(error);
   }
-}
 
   //--------------------------------------------------------------------
   static async getPost(

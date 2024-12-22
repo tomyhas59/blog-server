@@ -9,7 +9,7 @@ const config = {
     database: process.env.DEV_DATABASE_NAME || "dev_db",
     username: process.env.DEV_DATABASE_USER || "root",
     password: process.env.DEV_DATABASE_PASSWORD || "password",
-    dialect: process.env.DEV_DATABASE_PASSWORD || "mariadb",
+    dialect: process.env.DEV_DATABASE_DIALECT || "mariadb",
     ssl: false,
   },
   test: {
