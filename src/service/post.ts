@@ -143,7 +143,7 @@ export default class PostService {
       }
 
       if (sortBy === "comment") {
-        const commentsTable = isPostgres ? '"Comments"' : "`comments`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
+        const commentsTable = isPostgres ? '"comments"' : "`comments`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
         const PostId = isPostgres ? '"PostId"' : "`PostId`";
         const postIdField = isPostgres ? '"Post"."id"' : "`Post`.`id`"; // Post.id에 대한 처리
 
