@@ -123,7 +123,7 @@ export default class PostService {
 
       const isPostgres = process.env.NODE_ENV === "production";
 
-      // 인기순 정렬
+      // 인기순
       if (sortBy === "popular") {
         const likeTable = isPostgres ? '"Like"' : "`like`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
         const PostId = isPostgres ? '"PostId"' : "`PostId`";
@@ -141,7 +141,7 @@ export default class PostService {
           [Comment, ReComment, "createdAt", "ASC"],
         ];
       }
-
+      //댓글순
       if (sortBy === "comment") {
         const commentsTable = isPostgres ? '"comments"' : "`comments`"; // PostgreSQL은 큰따옴표, MySQL은 백틱
         const PostId = isPostgres ? '"PostId"' : "`PostId`";
@@ -159,10 +159,20 @@ export default class PostService {
           [Comment, ReComment, "createdAt", "ASC"],
         ];
       }
+
+      //조회순
+      if (sortBy === "view") {
+        order = [
+          ["viewCount", "DESC"],
+          [Comment, "createdAt", "ASC"],
+          [Comment, ReComment, "createdAt", "ASC"],
+        ];
+      }
+
       // 데이터 조회
       const posts = await Post.findAll({
         include: getCommonInclude(),
-        order, // 동적으로 정렬 조건 적용
+        order,
         limit: Number(limit),
         offset: offset,
       });
@@ -182,6 +192,7 @@ export default class PostService {
   }
 
   //--------------------------------------------------------------------
+
   static async getPost(
     req: Request,
     res: Response,
@@ -194,7 +205,16 @@ export default class PostService {
         include: getCommonInclude(),
       });
 
-      res.status(200).json(post);
+      if (post) {
+        await post.increment("viewCount", { by: 1 });
+      } else {
+        console.log("포스트를 찾을 수 없습니다.");
+      }
+
+      const updatedPost = await Post.findByPk(postId, {
+        include: getCommonInclude(),
+      });
+      res.status(200).json(updatedPost);
     } catch (error) {
       console.error(error);
       next(error);
@@ -393,6 +413,7 @@ export default class PostService {
       next(error);
     }
   }
+
   //-------------------------------------------------------------
 
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -403,8 +424,8 @@ export default class PostService {
         const post = await Post.create({
           title: req.body.title,
           content: req.body.content,
-          userIdx: /*post 모델에서 관계 설정한 foreignKey 컬럼명*/ user.id,
-          //passport를 통해서 로그인하면 세션 데이터 해석 후 user 정보가 req.user에 담겨서 id값이 생김
+          userIdx: user.id,
+          viewCount: 0,
         });
 
         if (req.body.image) {

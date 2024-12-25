@@ -10,6 +10,7 @@ interface PostAttributes {
   title: string;
   content: string;
   userIdx?: number;
+  viewCount: number;
 }
 
 type PostCreationAttributes = Optional<PostAttributes, "id">;
@@ -22,6 +23,7 @@ export class Post
   public title!: string;
   public content!: string;
   public userIdx?: number;
+  public viewCount!: number;
 
   public addImages!: (images: Image[]) => Promise<void>;
   public removeLikers!: (UserId: number) => Promise<void>;
@@ -45,6 +47,12 @@ export class Post
           type: DataTypes.TEXT,
           allowNull: false,
           comment: "포스트",
+        },
+        viewCount: {
+          type: DataTypes.INTEGER,
+          defaultValue: 0,
+          allowNull: false,
+          comment: "조회 수",
         },
       },
       {
