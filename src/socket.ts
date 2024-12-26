@@ -219,7 +219,7 @@ export default (server: Server) => {
       io.emit("updateNotification");
     });
 
-    socket.on("readComment", async (postId: number) => {
+    socket.on("readComment", async ([postId, userId]) => {
       await Notification.update(
         {
           isRead: true,
@@ -230,7 +230,12 @@ export default (server: Server) => {
           },
         }
       );
-      io.emit("updateNotification");
+
+      const user = await User.findByPk(userId, {
+        include: { model: Notification },
+      });
+
+      io.emit("updateNotification", user);
     });
 
     socket.on("logoutUser", (userId: number) => {

@@ -348,15 +348,6 @@ export default class PostService {
       const searchOption = req.query.searchOption as string;
       const offset = (Number(page) - 1) * Number(limit);
 
-      console.log(
-        "-------------",
-        postId,
-        searchText,
-        searchOption,
-        page,
-        limit
-      );
-
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
         const commentPostIds = await Comment.findAll({
@@ -840,6 +831,9 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+
+      const exitingUser = await User.findByPk(user.id);
+
       const post = await Post.findOne({
         where: { id: req.params.postId },
       });
@@ -847,11 +841,11 @@ export default class PostService {
         res.status(403).send("게시글이 존재하지 않습니다.");
         return;
       }
+
       await post.addLikers(user.id);
       res.json({
-        PostId: post.id,
         UserId: user.id,
-        nickname: user.nickname,
+        nickname: exitingUser?.nickname,
       });
     } catch (error) {
       console.error(error);

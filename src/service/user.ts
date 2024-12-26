@@ -121,7 +121,9 @@ export default class UserService {
       //password를 제외
       const { password, ...userWithoutPassword } = user.toJSON();
 
-      res.status(200).json(userWithoutPassword);
+      res
+        .status(200)
+        .json({ user: userWithoutPassword, accessToken, refreshToken });
     } catch (err) {
       console.error(err);
       next(err);
