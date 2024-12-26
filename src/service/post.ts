@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, CookieOptions } from "express";
 import { Post } from "../models/post";
 import { User } from "../models/user";
 import { Comment } from "../models/comment";
@@ -216,14 +216,18 @@ export default class PostService {
         include: getCommonInclude(),
       });
 
+      const cookieOptions: CookieOptions = {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 만료 시간 1일
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "None", "Lax", "Strict" 중 하나로 설정
+      };
+
       if (post) {
         await post.increment("viewCount", { by: 1 });
 
         viewedPosts.push(postId);
-        res.cookie("viewedPosts", JSON.stringify(viewedPosts), {
-          maxAge: 24 * 60 * 60 * 1000, // 만료 시간 1일
-          httpOnly: true, // 클라이언트 측에서 쿠키를 수정하지 못하도록 보호
-        });
+        res.cookie("viewedPosts", JSON.stringify(viewedPosts), cookieOptions);
       } else {
         console.log("포스트를 찾을 수 없습니다.");
       }
