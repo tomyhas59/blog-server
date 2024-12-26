@@ -200,6 +200,17 @@ export default class PostService {
   ): Promise<void> {
     try {
       const postId = Number(req.params.postId);
+      const viewedPosts: number[] = JSON.parse(req.cookies.viewedPosts || "[]");
+
+      if (viewedPosts.includes(postId)) {
+        console.log("이미 조회한 포스트입니다.");
+        const post = await Post.findByPk(postId, {
+          include: getCommonInclude(),
+        });
+        console.log("------------------", post?.viewCount);
+        res.status(200).json(post);
+        return;
+      }
 
       const post = await Post.findByPk(postId, {
         include: getCommonInclude(),
@@ -207,6 +218,12 @@ export default class PostService {
 
       if (post) {
         await post.increment("viewCount", { by: 1 });
+
+        viewedPosts.push(postId);
+        res.cookie("viewedPosts", JSON.stringify(viewedPosts), {
+          maxAge: 24 * 60 * 60 * 1000, // 만료 시간 1일
+          httpOnly: true, // 클라이언트 측에서 쿠키를 수정하지 못하도록 보호
+        });
       } else {
         console.log("포스트를 찾을 수 없습니다.");
       }
@@ -214,6 +231,7 @@ export default class PostService {
       const updatedPost = await Post.findByPk(postId, {
         include: getCommonInclude(),
       });
+
       res.status(200).json(updatedPost);
     } catch (error) {
       console.error(error);
