@@ -33,7 +33,6 @@ export default (server: Server) => {
       methods: ["GET", "POST"],
       credentials: true,
     },
-    transports: ["websocket"],
   });
 
   const handleSystemMessage = async (
