@@ -71,7 +71,7 @@ export default class UserService {
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },
-          { model: Notification, attributes: ["id", "isRead"] },
+          { model: Notification, attributes: ["id", "isRead", "type"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });
@@ -121,6 +121,7 @@ export default class UserService {
       //password를 제외
       const { password, ...userWithoutPassword } = user.toJSON();
 
+      console.log(userWithoutPassword);
       res
         .status(200)
         .json({ user: userWithoutPassword, accessToken, refreshToken });
