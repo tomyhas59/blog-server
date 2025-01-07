@@ -588,11 +588,16 @@ export default class PostService {
 
       const post = await Post.findOne({
         where: { id: postId },
+        include: {
+          model: User,
+          attributes: ["nickname"],
+        },
       });
       if (!post) {
         res.status(403).send("존재하지 않는 게시글입니다");
         return;
       }
+
       const comment = await Comment.create({
         content: req.body.content,
         PostId: parseInt(postId, 10),
@@ -600,7 +605,7 @@ export default class PostService {
       });
 
       if (existingUser && post.userIdx !== existingUser.id) {
-        const message = `${existingUser.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+        const message = `${existingUser.nickname}님이 ${post.User.nickname}님의 게시글에 댓글을 남겼습니다.`;
 
         await Notification.create({
           UserId: Number(post.userIdx),
@@ -715,6 +720,7 @@ export default class PostService {
 
       const post = await Post.findOne({
         where: { id: req.params.postId },
+        include: { model: User, attributes: ["nickname"] },
       });
       if (!post) {
         res.status(403).send("존재하지 않는 게시글입니다");
@@ -729,7 +735,7 @@ export default class PostService {
       });
 
       if (existingUser && post.userIdx !== existingUser.id) {
-        const message = `${existingUser.nickname}님이 당신의 게시글에 댓글을 남겼습니다.`;
+        const message = `${existingUser.nickname}님이 ${post.User.nickname}님의 게시글에 댓글을 남겼습니다.`;
 
         await Notification.create({
           UserId: Number(post.userIdx),

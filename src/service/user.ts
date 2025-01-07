@@ -280,7 +280,7 @@ export default class UserService {
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },
-          { model: Notification, attributes: ["id", "isRead"] },
+          { model: Notification, attributes: ["id", "isRead", "type"] },
         ],
         attributes: ["id", "nickname", "email", "password", "createdAt"],
       });

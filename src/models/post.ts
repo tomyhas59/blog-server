@@ -11,6 +11,7 @@ interface PostAttributes {
   content: string;
   userIdx?: number;
   viewCount: number;
+  User?: User;
 }
 
 type PostCreationAttributes = Optional<PostAttributes, "id">;
@@ -24,6 +25,7 @@ export class Post
   public content!: string;
   public userIdx?: number;
   public viewCount!: number;
+  public User!: User;
 
   public addImages!: (images: Image[]) => Promise<void>;
   public removeLikers!: (UserId: number) => Promise<void>;
