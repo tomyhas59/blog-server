@@ -5,6 +5,7 @@ import { Comment } from "./comment";
 import { ChatRoom } from "./chatRoom";
 import { ChatMessage } from "./chatMessage";
 import { Notification } from "./notification";
+import { ReComment } from "./recomment";
 
 interface UserAttributes {
   id: number;
@@ -69,6 +70,7 @@ export class User
     Image: typeof Image;
     Post: typeof Post;
     Comment: typeof Comment;
+    ReComment: typeof ReComment;
     ChatRoom: typeof ChatRoom;
     ChatMessage: typeof ChatMessage;
     User: typeof User;
@@ -81,6 +83,16 @@ export class User
     User.belongsToMany(models.Post, {
       through: "Like",
       as: "Liked",
+    });
+
+    User.belongsToMany(models.Comment, {
+      through: "CommentLike",
+      as: "CommentLiked",
+    });
+
+    User.belongsToMany(models.ReComment, {
+      through: "ReCommentLike",
+      as: "ReCommentLiked",
     });
 
     User.belongsToMany(models.User, {

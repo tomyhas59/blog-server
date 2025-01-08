@@ -19,6 +19,9 @@ export class Comment
   public UserId!: number;
   public PostId!: number;
 
+  public removeCommentLikers!: (UserId: number) => Promise<void>;
+  public addCommentLikers!: (UserId: number) => Promise<void>;
+
   public static initModel(sequelize: Sequelize): typeof Comment {
     Comment.init(
       {
@@ -62,5 +65,9 @@ export class Comment
     Comment.belongsTo(models.User);
     Comment.belongsTo(models.Post);
     Comment.hasMany(models.ReComment);
+    Comment.belongsToMany(models.User, {
+      through: "CommentLike",
+      as: "CommentLikers",
+    });
   }
 }

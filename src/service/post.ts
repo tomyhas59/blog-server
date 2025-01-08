@@ -36,11 +36,21 @@ const getCommonInclude = () => [
         attributes: ["id", "nickname"],
       },
       {
+        model: User,
+        as: "CommentLikers",
+        attributes: ["id", "nickname"],
+      },
+      {
         model: ReComment,
         include: [
           {
             model: User,
             include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "ReCommentLikers",
             attributes: ["id", "nickname"],
           },
         ],
@@ -874,6 +884,104 @@ export default class PostService {
       }
       await post.removeLikers(user.id);
       res.status(200).json({ PostId: post.id, UserId: user.id });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  static async commentLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user as User;
+
+      const exitingUser = await User.findByPk(user.id);
+
+      const comment = await Comment.findOne({
+        where: { id: req.params.commentId },
+      });
+      if (!comment) {
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
+      }
+
+      await comment.addCommentLikers(user.id);
+      res.json({
+        UserId: user.id,
+        nickname: exitingUser?.nickname,
+      });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  static async commentUnLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user as User;
+      const comment = await Comment.findOne({
+        where: { id: req.params.commentId },
+      });
+      if (!comment) {
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
+      }
+      await comment.removeCommentLikers(user.id);
+      res.status(200).json({ CommentId: comment.id, UserId: user.id });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  static async reCommentLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user as User;
+
+      const exitingUser = await User.findByPk(user.id);
+
+      const reComment = await ReComment.findOne({
+        where: { id: req.params.reCommentId },
+      });
+      if (!reComment) {
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
+      }
+
+      await reComment.addReCommentLikers(user.id);
+      res.json({
+        UserId: user.id,
+        nickname: exitingUser?.nickname,
+      });
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  }
+  static async reCommentUnLike(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user as User;
+      const reComment = await ReComment.findOne({
+        where: { id: req.params.reCommentId },
+      });
+      if (!reComment) {
+        res.status(403).send("게시글이 존재하지 않습니다.");
+        return;
+      }
+      await reComment.removeReCommentLikers(user.id);
+      res.status(200).json({ ReCommentId: reComment.id, UserId: user.id });
     } catch (error) {
       console.error(error);
       next(error);
