@@ -37,7 +37,7 @@ const getCommonInclude = () => [
       },
       {
         model: User,
-        as: "CommentLikers",
+        as: "Likers",
         attributes: ["id", "nickname"],
       },
       {
@@ -50,7 +50,7 @@ const getCommonInclude = () => [
           },
           {
             model: User,
-            as: "ReCommentLikers",
+            as: "Likers",
             attributes: ["id", "nickname"],
           },
         ],
@@ -907,9 +907,10 @@ export default class PostService {
         return;
       }
 
-      await comment.addCommentLikers(user.id);
+      await comment.addLikers(user.id);
       res.json({
         UserId: user.id,
+        CommentId: comment.id,
         nickname: exitingUser?.nickname,
       });
     } catch (error) {
@@ -931,7 +932,7 @@ export default class PostService {
         res.status(403).send("게시글이 존재하지 않습니다.");
         return;
       }
-      await comment.removeCommentLikers(user.id);
+      await comment.removeLikers(user.id);
       res.status(200).json({ CommentId: comment.id, UserId: user.id });
     } catch (error) {
       console.error(error);
@@ -945,6 +946,7 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+      const commentId = Number(req.params.commentId);
 
       const exitingUser = await User.findByPk(user.id);
 
@@ -956,8 +958,10 @@ export default class PostService {
         return;
       }
 
-      await reComment.addReCommentLikers(user.id);
+      await reComment.addLikers(user.id);
       res.json({
+        CommentId: commentId,
+        ReCommentId: reComment.id,
         UserId: user.id,
         nickname: exitingUser?.nickname,
       });
@@ -973,6 +977,7 @@ export default class PostService {
   ): Promise<void> {
     try {
       const user = req.user as User;
+      const commentId = Number(req.params.commentId);
       const reComment = await ReComment.findOne({
         where: { id: req.params.reCommentId },
       });
@@ -980,8 +985,12 @@ export default class PostService {
         res.status(403).send("게시글이 존재하지 않습니다.");
         return;
       }
-      await reComment.removeReCommentLikers(user.id);
-      res.status(200).json({ ReCommentId: reComment.id, UserId: user.id });
+      await reComment.removeLikers(user.id);
+      res.status(200).json({
+        CommentId: commentId,
+        ReCommentId: reComment.id,
+        UserId: user.id,
+      });
     } catch (error) {
       console.error(error);
       next(error);

@@ -21,8 +21,8 @@ export class ReComment
   public PostId?: number;
   public CommentId!: number;
 
-  public removeReCommentLikers!: (UserId: number) => Promise<void>;
-  public addReCommentLikers!: (UserId: number) => Promise<void>;
+  public removeLikers!: (UserId: number) => Promise<void>;
+  public addLikers!: (UserId: number) => Promise<void>;
 
   public static initModel(sequelize: Sequelize): typeof ReComment {
     ReComment.init(
@@ -73,7 +73,7 @@ export class ReComment
     ReComment.belongsTo(models.User);
     ReComment.belongsToMany(models.User, {
       through: "ReCommentLike",
-      as: "ReCommentLikers",
+      as: "Likers",
     });
   }
 }

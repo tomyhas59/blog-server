@@ -81,11 +81,23 @@ router.delete(
   PostService.reCommentDelete
 );
 
-// 게시글 좋아요
+//좋아요
 router.patch("/:postId/like", isLoggedIn, PostService.postLike);
+router.patch("/:commentId/commentLike", isLoggedIn, PostService.commentLike);
+router.patch(
+  "/:commentId/:reCommentId/reCommentLike",
+  isLoggedIn,
+  PostService.reCommentLike
+);
 
-// 게시글 좋아요 취소
+//좋아요 취소
 router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
+router.delete("/:commentId/commentLike", isLoggedIn, PostService.commentUnLike);
+router.delete(
+  "/:commentId/:reCommentId/reCommentLike",
+  isLoggedIn,
+  PostService.reCommentUnLike
+);
 
 // 좋아요 한 게시글 조회
 router.get("/likers", isLoggedIn, PostService.getLikedPosts);
