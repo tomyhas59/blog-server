@@ -25,8 +25,11 @@ router.post(
 // 사용자의 게시글 조회
 router.get("/", isLoggedIn, PostService.getUserPosts);
 
+// 게시글 댓글 조회
+router.get("/comment", PostService.getPostComments);
+
 // 사용자의 댓글 조회
-router.get("/comment", isLoggedIn, PostService.getUserComments);
+router.get("/user/comment", isLoggedIn, PostService.getUserComments);
 
 // 게시글 작성
 router.post("/", isLoggedIn, upload.none(), PostService.create);

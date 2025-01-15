@@ -344,7 +344,65 @@ export default class PostService {
   }
 
   //----------------------------------------------------------------------
+  static async getPostComments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { page = 1, limit = 10 } = req.query;
+    const postId = Number(req.query.postId);
 
+    if (isNaN(postId) || postId <= 0) {
+      res.status(400).json({ error: "postId가 없습니다" });
+      return;
+    }
+
+    try {
+      const offset = (Number(page) - 1) * Number(limit);
+
+      const comments = await Comment.findAll({
+        where: { PostId: postId },
+        include: [
+          {
+            model: User, // 댓글 작성자
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "Likers",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: ReComment,
+            include: [
+              {
+                model: User,
+                include: [{ model: Image, attributes: ["src"] }],
+                attributes: ["id", "nickname"],
+              },
+              {
+                model: User,
+                as: "Likers",
+                attributes: ["id", "nickname"],
+              },
+            ],
+            attributes: ["id", "content", "createdAt"],
+          },
+        ],
+        limit: Number(limit),
+        order: [["createdAt", "ASC"]],
+        offset: offset,
+      });
+
+      const totalComments = await Comment.count({ where: { PostId: postId } });
+
+      res.status(200).json({ comments, totalComments });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  //---------------------------------------------------------------------
   static async search(
     req: Request,
     res: Response,
