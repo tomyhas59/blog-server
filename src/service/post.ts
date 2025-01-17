@@ -409,7 +409,7 @@ export default class PostService {
     next: NextFunction
   ): Promise<void> {
     try {
-      const postId = req.query.postId;
+      const postId = Number(req.query.postId);
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;
       const searchText = req.query.searchText as string;
@@ -487,8 +487,15 @@ export default class PostService {
         res.status(404).json(null);
         return;
       }
+      const allPosts = await Post.findAll({
+        order: [["createdAt", "DESC"]],
+      });
 
-      res.status(200).json({ searchedPosts, totalSearchedPosts, searchOption });
+      const postNum = allPosts.findIndex((post) => post.id === postId);
+
+      res
+        .status(200)
+        .json({ searchedPosts, totalSearchedPosts, searchOption, postNum });
     } catch (error) {
       console.error(error);
       next(error);
