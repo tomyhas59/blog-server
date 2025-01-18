@@ -8,6 +8,7 @@ interface CommentAttributes {
   content: string;
   UserId: number;
   PostId: number;
+  ReComments?: ReComment[];
 }
 
 export class Comment
@@ -18,6 +19,7 @@ export class Comment
   public content!: string;
   public UserId!: number;
   public PostId!: number;
+  public ReComments!: ReComment[];
 
   public removeLikers!: (UserId: number) => Promise<void>;
   public addLikers!: (UserId: number) => Promise<void>;

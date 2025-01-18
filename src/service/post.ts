@@ -122,8 +122,7 @@ export default class PostService {
     const { page = 1, limit = 10, sortBy = "recent" } = req.query;
 
     try {
-      const offset = (Number(page) - 1) * Number(limit);
-
+      const offset = Math.max(0, (Number(page) - 1) * Number(limit)); // offset이 음수일 경우 0으로 설정
       // 기본 정렬 조건: 최신순
       let order: any = [
         ["createdAt", "DESC"], // 최신순 기본값
@@ -358,8 +357,7 @@ export default class PostService {
     }
 
     try {
-      const offset = (Number(page) - 1) * Number(limit);
-
+      const offset = Math.max(0, (Number(page) - 1) * Number(limit)); // offset이 음수일 경우 0으로 설정
       const comments = await Comment.findAll({
         where: { PostId: postId },
         include: [
@@ -414,8 +412,7 @@ export default class PostService {
       const limit = Number(req.query.limit) || 10;
       const searchText = req.query.searchText as string;
       const searchOption = req.query.searchOption as string;
-      const offset = (Number(page) - 1) * Number(limit);
-
+      const offset = Math.max(0, (Number(page) - 1) * Number(limit)); // offset이 음수일 경우 0으로 설정
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
         const commentPostIds = await Comment.findAll({
@@ -490,12 +487,38 @@ export default class PostService {
       const allPosts = await Post.findAll({
         order: [["createdAt", "DESC"]],
       });
+      const allComments = await Comment.findAll({
+        where: { PostId: postId },
+        include: [{ model: ReComment }],
+        order: [["createdAt", "ASC"]],
+      });
 
-      const postNum = allPosts.findIndex((post) => post.id === postId);
+      const postNum = allPosts.findIndex((post) => post.id === postId) + 1;
+      let commentNum = -1;
+      const category = req.query.category;
+      const commentOrReCommentId = Number(req.query.commentOrReCommentId);
 
-      res
-        .status(200)
-        .json({ searchedPosts, totalSearchedPosts, searchOption, postNum });
+      if (category === "comment") {
+        commentNum =
+          allComments.findIndex(
+            (comment) => comment.id === commentOrReCommentId
+          ) + 1;
+      } else if (category === "reComment") {
+        commentNum =
+          allComments.findIndex((comment) =>
+            comment.ReComments.some(
+              (recomment) => recomment.id === commentOrReCommentId
+            )
+          ) + 1;
+      }
+
+      res.status(200).json({
+        searchedPosts,
+        totalSearchedPosts,
+        searchOption,
+        postNum,
+        commentNum,
+      });
     } catch (error) {
       console.error(error);
       next(error);
