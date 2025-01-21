@@ -413,23 +413,30 @@ export default class PostService {
       const searchText = req.query.searchText as string;
       const searchOption = req.query.searchOption as string;
       const offset = Math.max(0, (Number(page) - 1) * Number(limit)); // offset이 음수일 경우 0으로 설정
+      const category = req.query.category;
+      const commentOrReCommentId = Number(req.query.commentOrReCommentId);
+
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
-        const commentPostIds = await Comment.findAll({
-          where: { content: { [Op.like]: `%${searchText}%` } },
-          attributes: ["PostId"],
-        }).then((comments) => comments.map((comment) => comment.PostId));
+        try {
+          const commentPostIds = await Comment.findAll({
+            where: { content: { [Op.like]: `%${searchText}%` } },
+            attributes: ["PostId"],
+          }).then((comments) => comments.map((comment) => comment.PostId));
 
-        const reCommentPostIds = await ReComment.findAll({
-          where: { content: { [Op.like]: `%${searchText}%` } },
-          attributes: ["PostId"],
-        }).then((reComments) =>
-          reComments.map((reComment) => reComment.PostId)
-        );
+          const reCommentPostIds = await ReComment.findAll({
+            where: { content: { [Op.like]: `%${searchText}%` } },
+            attributes: ["PostId"],
+          }).then((reComments) =>
+            reComments.map((reComment) => reComment.PostId)
+          );
 
-        return [...new Set([...commentPostIds, ...reCommentPostIds])]; // 중복 제거
+          return [...new Set([...commentPostIds, ...reCommentPostIds])]; // 중복 제거
+        } catch (err) {
+          console.error("fetchPostIdsFromComments:", err);
+          return [];
+        }
       };
-
       // 댓글과 대댓글에서 검색된 PostId 가져오기
       const postIdsFromComments = await fetchPostIdsFromComments(searchText);
 
@@ -484,32 +491,36 @@ export default class PostService {
         res.status(404).json(null);
         return;
       }
+
+      let postNum;
+      let commentNum = -1;
+
       const allPosts = await Post.findAll({
         order: [["createdAt", "DESC"]],
       });
-      const allComments = await Comment.findAll({
-        where: { PostId: postId },
-        include: [{ model: ReComment }],
-        order: [["createdAt", "ASC"]],
-      });
 
-      const postNum = allPosts.findIndex((post) => post.id === postId) + 1;
-      let commentNum = -1;
-      const category = req.query.category;
-      const commentOrReCommentId = Number(req.query.commentOrReCommentId);
+      if (postId) {
+        const allComments = await Comment.findAll({
+          where: { PostId: postId },
+          include: [{ model: ReComment }],
+          order: [["createdAt", "ASC"]],
+        });
 
-      if (category === "comment") {
-        commentNum =
-          allComments.findIndex(
-            (comment) => comment.id === commentOrReCommentId
-          ) + 1;
-      } else if (category === "reComment") {
-        commentNum =
-          allComments.findIndex((comment) =>
-            comment.ReComments.some(
-              (recomment) => recomment.id === commentOrReCommentId
-            )
-          ) + 1;
+        postNum = allPosts.findIndex((post) => post.id === postId) + 1;
+
+        if (category === "comment") {
+          commentNum =
+            allComments.findIndex(
+              (comment) => comment.id === commentOrReCommentId
+            ) + 1;
+        } else if (category === "reComment") {
+          commentNum =
+            allComments.findIndex((comment) =>
+              comment.ReComments.some(
+                (recomment) => recomment.id === commentOrReCommentId
+              )
+            ) + 1;
+        }
       }
 
       res.status(200).json({
