@@ -130,6 +130,43 @@ export default class UserService {
       next(err);
     }
   }
+  //비밀번호 변경
+  static async changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { prevPassword, newPassword, userId } = req.body;
+
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      const isMatch = await bcrypt.compare(prevPassword, user.password);
+      if (!isMatch) {
+        res.status(400).json({ message: "비밀번호가 다릅니다." });
+        return;
+      }
+
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      user.password = hashedNewPassword;
+      await user.save();
+
+      res.status(200).send("ok"); // 200 성공
+    } catch (err) {
+      console.error(err);
+      next(err); // status 500
+    }
+  }
 
   // 사용자 이미지 생성
   static async createUserImage(
