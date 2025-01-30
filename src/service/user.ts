@@ -130,6 +130,37 @@ export default class UserService {
       next(err);
     }
   }
+
+  //닉네임 변경
+
+  static async modifyNickname(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const newNickname = req.body.newNickname;
+      const user = req.user as User;
+
+      console.log("--------------", user, newNickname);
+      if (!user.id) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+
+      const existingUser = await User.findByPk(user.id);
+      if (!existingUser) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      existingUser.nickname = newNickname;
+
+      await existingUser.save();
+      res.status(200).send("ok"); // 200 성공
+    } catch (err) {
+      console.error(err);
+    }
+  }
   //비밀번호 변경
   static async changePassword(
     req: Request,
@@ -137,20 +168,21 @@ export default class UserService {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { prevPassword, newPassword, userId } = req.body;
+      const { prevPassword, newPassword } = req.body;
+      const user = req.user as User;
 
-      if (!userId) {
+      if (!user.id) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
 
-      const user = await User.findByPk(userId);
-      if (!user) {
+      const existingUser = await User.findByPk(user.id);
+      if (!existingUser) {
         res.status(404).json({ message: "User not found" });
         return;
       }
 
-      const isMatch = await bcrypt.compare(prevPassword, user.password);
+      const isMatch = await bcrypt.compare(prevPassword, existingUser.password);
       if (!isMatch) {
         res.status(400).json({ message: "비밀번호가 다릅니다." });
         return;
@@ -158,8 +190,8 @@ export default class UserService {
 
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-      user.password = hashedNewPassword;
-      await user.save();
+      existingUser.password = hashedNewPassword;
+      await existingUser.save();
 
       res.status(200).send("ok"); // 200 성공
     } catch (err) {

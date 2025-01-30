@@ -13,6 +13,8 @@ router.post(
   upload.single("profileImage"),
   UserService.createUserImage
 );
+
+router.post("/modifyNickname", isLoggedIn, UserService.modifyNickname);
 router.post("/changePassword", isLoggedIn, UserService.changePassword);
 router.get("/profileImage", isLoggedIn, UserService.getUserImage);
 router.delete("/profileImage", isLoggedIn, UserService.removeUserImage);
