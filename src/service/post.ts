@@ -393,7 +393,12 @@ export default class PostService {
         offset: offset,
       });
 
-      const totalComments = await Comment.count({ where: { PostId: postId } });
+      const commentsCount = await Comment.count({ where: { PostId: postId } });
+      const reCommentsCount = await ReComment.count({
+        where: { PostId: postId },
+      });
+
+      const totalComments = commentsCount + reCommentsCount;
 
       res.status(200).json({ comments, totalComments });
     } catch (err) {
