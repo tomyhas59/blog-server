@@ -400,7 +400,7 @@ export default class PostService {
 
       const totalComments = commentsCount + reCommentsCount;
 
-      res.status(200).json({ comments, totalComments });
+      res.status(200).json({ comments, commentsCount, totalComments });
     } catch (err) {
       console.error(err);
     }
