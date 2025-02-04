@@ -616,7 +616,6 @@ export default class PostService {
         await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
       }
 
-      //addImgaes 한 다음 다시 호출
       const updatePost = await Post.findOne({
         where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
         include: getCommonInclude(),
@@ -1317,7 +1316,7 @@ export default class PostService {
     }
   }
   //read chat message---------------------------------
-  static async readChatMessges(
+  static async readChatMessages(
     req: Request,
     res: Response,
     next: NextFunction

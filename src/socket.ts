@@ -207,7 +207,7 @@ export default (server: Server) => {
       }
     );
 
-    socket.on("followNotiRead", async (userId: number) => {
+    socket.on("followNotificationRead", async (userId: number) => {
       await Notification.update(
         {
           isRead: true,

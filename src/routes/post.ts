@@ -118,7 +118,7 @@ router.get("/getChat", isLoggedIn, PostService.getChatMessage);
 router.patch(
   "/chatMessages/:messageId/read",
   isLoggedIn,
-  PostService.readChatMessges
+  PostService.readChatMessages
 );
 
 // 쿼리 예시 주석
