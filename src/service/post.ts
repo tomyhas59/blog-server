@@ -522,7 +522,7 @@ export default class PostService {
           commentNum =
             allComments.findIndex((comment) =>
               comment.ReComments.some(
-                (recomment) => recomment.id === commentOrReCommentId
+                (reComment) => reComment.id === commentOrReCommentId
               )
             ) + 1;
         }

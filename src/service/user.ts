@@ -494,14 +494,14 @@ export default class UserService {
     const userId = Number(req.query.userId);
 
     try {
-      const newFollowsers = await Notification.count({
+      const newFollowers = await Notification.count({
         where: {
           UserId: userId,
           type: "FOLLOW",
           isRead: false,
         },
       });
-      res.json(newFollowsers);
+      res.json(newFollowers);
     } catch (err) {
       console.error(err);
     }
