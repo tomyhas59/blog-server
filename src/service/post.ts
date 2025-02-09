@@ -400,7 +400,58 @@ export default class PostService {
 
       const totalComments = commentsCount + reCommentsCount;
 
-      res.status(200).json({ comments, commentsCount, totalComments });
+      //톱3 댓글
+      const isPostgres = process.env.NODE_ENV === "production";
+
+      const commentLikeTable = isPostgres ? '"CommentLike"' : "`commentlike`";
+      const CommentId = isPostgres ? '"CommentId"' : "`CommentId`";
+      const commentIdField = isPostgres ? '"Comment"."id"' : "`Comment`.`id`";
+
+      const top3Comments = await Comment.findAll({
+        where: { PostId: postId },
+        include: [
+          {
+            model: User, // 댓글 작성자
+            include: [{ model: Image, attributes: ["src"] }],
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "Likers",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: ReComment,
+            include: [
+              {
+                model: User,
+                include: [{ model: Image, attributes: ["src"] }],
+                attributes: ["id", "nickname"],
+              },
+              {
+                model: User,
+                as: "Likers",
+                attributes: ["id", "nickname"],
+              },
+            ],
+            attributes: ["id", "content", "createdAt"],
+          },
+        ],
+        limit: 3,
+        order: [
+          [
+            literal(
+              `(SELECT COUNT(*) FROM ${commentLikeTable} WHERE ${commentLikeTable}.${CommentId} = ${commentIdField})`
+            ),
+            "DESC", // 좋아요 수 기준 내림차순
+          ],
+          ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
+        ],
+      });
+
+      res
+        .status(200)
+        .json({ comments, commentsCount, totalComments, top3Comments });
     } catch (err) {
       console.error(err);
     }
