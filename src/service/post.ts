@@ -74,8 +74,10 @@ export default class PostService {
       const filePath = path.join(__dirname, "../../uploads", filename);
 
       // 이미지 파일 삭제
-      fs.unlinkSync(filePath);
-      res.status(200).json({ filename: filename }); // reducer action.data.filename 전달
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        res.status(200).json({ filename: filename }); // reducer action.data.filename 전달
+      }
     } catch (error) {
       console.error(error);
       next(error);
