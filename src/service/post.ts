@@ -641,6 +641,7 @@ export default class PostService {
 
       await Post.update(
         {
+          title: req.body.title,
           content: req.body.content,
         },
         {
@@ -669,13 +670,13 @@ export default class PostService {
         await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
       }
 
-      const updatePost = await Post.findOne({
+      const updatedPost = await Post.findOne({
         where: { id: post?.id }, //게시글 쓰면 자동으로 id 생성
         include: getCommonInclude(),
       });
       res.status(200).json({
         PostId: parseInt(postId),
-        updatePost,
+        updatedPost,
       });
     } catch (err) {
       console.log(err);
