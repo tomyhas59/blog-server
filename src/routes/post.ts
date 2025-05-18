@@ -14,14 +14,6 @@ router.get("/posts/:postId", PostService.getPost);
 // 옵션별 게시글 검색
 router.get("/search", PostService.search);
 
-// 이미지 업로드
-router.post(
-  "/images",
-  isLoggedIn,
-  upload.array("image"),
-  PostService.imageUpload
-);
-
 // 사용자의 게시글 조회
 router.get("/", isLoggedIn, PostService.getUserPosts);
 
@@ -32,7 +24,7 @@ router.get("/comment", PostService.getPostComments);
 router.get("/user/comment", isLoggedIn, PostService.getUserComments);
 
 // 게시글 작성
-router.post("/", isLoggedIn, upload.none(), PostService.create);
+router.post("/", isLoggedIn, upload.array("image"), PostService.create);
 
 // 게시글 수정
 router.put("/:postId", isLoggedIn, upload.none(), PostService.update);
@@ -67,7 +59,7 @@ router.delete(
 router.post(
   "/:postId/comment/:commentId/reComment",
   isLoggedIn,
-  PostService.ReCommentCreate
+  PostService.reCommentCreate
 );
 
 // 대댓글 수정

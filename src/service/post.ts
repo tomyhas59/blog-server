@@ -76,7 +76,7 @@ export default class PostService {
       // 이미지 파일 삭제
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        res.status(200).json({ filename: filename }); // reducer action.data.filename 전달
+        res.status(200).json({ filename }); // reducer action.data.filename 전달
       }
     } catch (error) {
       console.error(error);
@@ -599,19 +599,22 @@ export default class PostService {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const user = req.user as User;
+      const files = req.files as File[];
+      const { title, content } = req.body;
 
       if (user.id) {
         const post = await Post.create({
-          title: req.body.title,
-          content: req.body.content,
+          title,
+          content,
           userIdx: user.id,
           viewCount: 0,
         });
 
-        if (req.body.image) {
-          const imagePromises = Array.isArray(req.body.image)
-            ? req.body.image.map((image: any) => Image.create({ src: image }))
-            : [Image.create({ src: req.body.image })];
+        // 이미지 저장
+        if (files && files.length > 0) {
+          const imagePromises = files.map((file) =>
+            Image.create({ src: `${file.filename}` })
+          );
 
           const imageResults = await Promise.allSettled(imagePromises);
 
@@ -638,11 +641,12 @@ export default class PostService {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
+      const { title, content } = req.body;
 
       await Post.update(
         {
-          title: req.body.title,
-          content: req.body.content,
+          title,
+          content,
         },
         {
           where: {
@@ -874,7 +878,7 @@ export default class PostService {
     }
   }
   //----------------------------------------------------------------------
-  static async ReCommentCreate(
+  static async reCommentCreate(
     req: Request,
     res: Response,
     next: NextFunction
