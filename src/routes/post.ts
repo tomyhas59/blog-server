@@ -27,13 +27,10 @@ router.get("/user/comment", isLoggedIn, PostService.getUserComments);
 router.post("/", isLoggedIn, upload.array("image"), PostService.create);
 
 // 게시글 수정
-router.put("/:postId", isLoggedIn, upload.none(), PostService.update);
+router.put("/update", isLoggedIn, upload.array("image"), PostService.update);
 
 // 게시글 삭제
 router.delete("/:postId", isLoggedIn, PostService.delete);
-
-// 이미지 제거
-router.delete("/images/:filename", isLoggedIn, PostService.imageRemove);
 
 // 특정 게시글의 이미지 삭제
 router.delete("/:postId/images/:filename", isLoggedIn, PostService.imageDelete);

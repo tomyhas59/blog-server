@@ -62,28 +62,6 @@ const getCommonInclude = () => [
 ];
 
 export default class PostService {
-  static async imageUpload(req: Request, res: Response) {
-    const files = req.files as File[];
-    console.log(files);
-    res.json(files?.map((file) => file.filename));
-  }
-
-  static async imageRemove(req: Request, res: Response, next: NextFunction) {
-    try {
-      const filename = req.params.filename;
-      const filePath = path.join(__dirname, "../../uploads", filename);
-
-      // 이미지 파일 삭제
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        res.status(200).json({ filename }); // reducer action.data.filename 전달
-      }
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
-  }
-
   static async imageDelete(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
@@ -640,8 +618,8 @@ export default class PostService {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const postId = req.params.postId;
-      const { title, content } = req.body;
+      const { title, content, postId } = req.body;
+      const files = req.files as File[];
 
       await Post.update(
         {
@@ -650,13 +628,13 @@ export default class PostService {
         },
         {
           where: {
-            id: postId,
+            id: parseInt(postId),
             /*    userIdx: user.id, */
           },
         }
       );
       const post = await Post.findOne({
-        where: { id: postId },
+        where: { id: parseInt(postId) },
         include: [
           {
             model: Image,
@@ -664,9 +642,10 @@ export default class PostService {
         ],
       });
 
-      if (req.body.imagePaths) {
+      const newImagePaths = files.map((file) => file.filename);
+      if (newImagePaths) {
         const images = await Promise.all(
-          req.body.imagePaths.map((filename: string) =>
+          newImagePaths.map((filename: string) =>
             Image.create({ src: filename })
           )
         );
