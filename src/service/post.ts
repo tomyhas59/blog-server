@@ -437,6 +437,46 @@ export default class PostService {
     }
   }
   //---------------------------------------------------------------------
+  static async getCommentPage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const commentId = Number(req.query.commentId);
+      const postId = Number(req.query.postId);
+      const limit = Number(req.query.limit) || 10;
+
+      //해당 댓글의 createdAt 가져오기
+      const target = await Comment.findOne({
+        where: { id: commentId },
+        attributes: ["createdAt"],
+      });
+
+      if (!target) {
+        res.status(404).json({ error: "댓글을 찾을 수 없습니다." });
+        return;
+      }
+
+      //해당 댓글보다 먼저 쓴 댓글 개수
+      const olderCount = await Comment.count({
+        where: {
+          PostId: postId,
+          createdAt: {
+            [Op.lt]: target.createdAt,
+          },
+        },
+      });
+
+      const page = Math.floor(olderCount / limit) + 1;
+      res.json({ page });
+      return;
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "서버 오류" });
+    }
+  }
+  //---------------------------------------------------------------------
   static async search(
     req: Request,
     res: Response,

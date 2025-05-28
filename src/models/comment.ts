@@ -9,6 +9,7 @@ interface CommentAttributes {
   UserId: number;
   PostId: number;
   ReComments?: ReComment[];
+  createdAt?: Date;
 }
 
 export class Comment
@@ -20,7 +21,7 @@ export class Comment
   public UserId!: number;
   public PostId!: number;
   public ReComments!: ReComment[];
-
+  public readonly createdAt!: Date;
   public removeLikers!: (UserId: number) => Promise<void>;
   public addLikers!: (UserId: number) => Promise<void>;
 

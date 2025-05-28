@@ -44,6 +44,8 @@ router.put(
   isLoggedIn,
   PostService.commentUpdate
 );
+//해당 댓글의 페이지
+router.get("/getCommentPage", PostService.getCommentPage);
 
 // 댓글 삭제
 router.delete(
