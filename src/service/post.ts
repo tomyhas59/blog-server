@@ -10,7 +10,6 @@ import { literal, Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
 import { Notification } from "../models/notification";
-import sharp from "sharp";
 
 interface File {
   filename: string;
@@ -629,22 +628,11 @@ export default class PostService {
           viewCount: 0,
         });
 
-        // service 폴더 기준 저장 경로
-        const uploadDir = path.join(__dirname, "../../uploads");
-
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
         // 이미지 저장
         if (files && files.length > 0) {
-          const imagePromises = files.map(async (file) => {
-            const resizedFilename = `resized_${file.filename}`;
-            const resizedPath = path.join(uploadDir, resizedFilename);
-
-            await sharp(file.path).resize({ width: 400 }).toFile(resizedPath);
-
-            return Image.create({ src: resizedFilename });
-          });
+          const imagePromises = files.map((file) =>
+            Image.create({ src: file.filename })
+          );
 
           const imageResults = await Promise.allSettled(imagePromises);
 
@@ -666,8 +654,8 @@ export default class PostService {
       next(err); //status 500임
     }
   }
-  //----------------------------------------------------------------------
 
+  //------------------------------------------------------------------------
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { title, content, postId } = req.body;
