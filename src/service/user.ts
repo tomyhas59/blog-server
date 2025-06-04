@@ -8,6 +8,7 @@ import { Request, Response, NextFunction, CookieOptions } from "express";
 import { exportJWK } from "jose";
 import { Notification } from "./../models/notification";
 import { Op } from "sequelize";
+import { Post } from "../models/post";
 
 export default class UserService {
   // 회원가입 기능
@@ -364,6 +365,57 @@ export default class UserService {
       const { password, ...userWithoutPassword } = existingUser.toJSON();
 
       res.json(userWithoutPassword);
+    } catch (err) {
+      console.error(err);
+      next(err);
+    }
+  }
+
+  //사용자 정보 가져오기
+
+  static async getUserInfo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.query.userId;
+
+      // userId를 string으로 강제 변환
+      const validUserId = Array.isArray(userId)
+        ? userId[0]
+        : (userId as string);
+
+      const existingUser = await User.findOne({
+        where: { id: validUserId },
+        include: [
+          {
+            model: Post,
+            attributes: ["title", "content"],
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
+          },
+          {
+            model: User,
+            as: "Followers",
+            attributes: ["id", "nickname"],
+          },
+          {
+            model: User,
+            as: "Followings",
+            attributes: ["id", "nickname"],
+          },
+          { model: Image, attributes: ["src"] },
+        ],
+        attributes: ["id", "nickname", "email"],
+      });
+
+      if (!existingUser) {
+        res.status(401).send("유저 정보가 없습니다.");
+        return;
+      }
+
+      res.json(existingUser);
     } catch (err) {
       console.error(err);
       next(err);

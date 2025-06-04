@@ -15,7 +15,7 @@ router.get("/posts/:postId", PostService.getPost);
 router.get("/search", PostService.search);
 
 // 사용자의 게시글 조회
-router.get("/", isLoggedIn, PostService.getUserPosts);
+router.get("/", PostService.getUserPosts);
 
 // 게시글 댓글 조회
 router.get("/comment", PostService.getPostComments);
