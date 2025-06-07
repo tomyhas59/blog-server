@@ -387,7 +387,7 @@ export default class UserService {
         include: [
           {
             model: Post,
-            attributes: ["title", "content"],
+            attributes: ["title", "content", "id"],
             include: [
               {
                 model: Image,
@@ -399,11 +399,23 @@ export default class UserService {
             model: User,
             as: "Followers",
             attributes: ["id", "nickname"],
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
           },
           {
             model: User,
             as: "Followings",
             attributes: ["id", "nickname"],
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
           },
           { model: Image, attributes: ["src"] },
         ],
