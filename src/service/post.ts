@@ -238,7 +238,7 @@ export default class PostService {
     next: NextFunction
   ): Promise<void> {
     try {
-      const userId = req.query.userId;
+      const { userId } = req.query;
 
       if (!userId) {
         res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
@@ -246,14 +246,13 @@ export default class PostService {
       }
 
       // userId를 string으로 강제 변환
-      const validUserId = Array.isArray(userId)
-        ? userId[0]
-        : (userId as string);
+      const validUserId = req.query.userId as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const offset = (page - 1) * limit;
 
-      const posts = await Post.findAll({
-        where: {
-          userIdx: validUserId, // userIdx에 올바른 형식의 userId 전달
-        },
+      const { rows: posts, count } = await Post.findAndCountAll({
+        where: { userIdx: validUserId },
         include: [
           {
             model: User,
@@ -262,10 +261,17 @@ export default class PostService {
           },
           { model: Notification, attributes: ["id", "message", "isRead"] },
         ],
-        order: [["createdAt", "DESC"]], // 게시글을 내림차순으로 정렬
+        order: [["createdAt", "DESC"]],
+        limit: limit,
+        offset,
+        distinct: true, // 중복된 결과를 제거해서 정확한 count 반환
       });
 
-      res.status(200).json(posts);
+      res.status(200).json({
+        posts,
+        total: count,
+        hasMore: offset + posts.length < count,
+      });
     } catch (error) {
       console.error(error);
       next(error);
