@@ -64,11 +64,23 @@ export default class UserService {
           {
             model: User,
             as: "Followers",
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
             attributes: ["id", "nickname"],
           },
           {
             model: User,
             as: "Followings",
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },
@@ -143,7 +155,6 @@ export default class UserService {
       const newNickname = req.body.newNickname;
       const user = req.user as User;
 
-      console.log("--------------", user, newNickname);
       if (!user.id) {
         res.status(401).json({ message: "Unauthorized" });
         return;
@@ -342,11 +353,23 @@ export default class UserService {
           {
             model: User,
             as: "Followers",
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
             attributes: ["id", "nickname"],
           },
           {
             model: User,
             as: "Followings",
+            include: [
+              {
+                model: Image,
+                attributes: ["src"],
+              },
+            ],
             attributes: ["id", "nickname"],
           },
           { model: Image, attributes: ["src"] },

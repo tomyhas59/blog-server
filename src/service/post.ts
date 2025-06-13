@@ -269,7 +269,6 @@ export default class PostService {
 
       res.status(200).json({
         posts,
-        total: count,
         hasMore: offset + posts.length < count,
       });
     } catch (error) {
@@ -287,41 +286,56 @@ export default class PostService {
   ): Promise<void> {
     try {
       const userId = req.query.userId;
+      const type = req.query.type;
 
       if (!userId) {
         res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
         return;
       }
-      const validUserId = Array.isArray(userId)
-        ? Number(userId[0])
-        : Number(userId);
 
-      const comments = await Comment.findAll({
-        where: {
-          UserId: validUserId,
-        },
-        include: [{ model: Post, attributes: ["id"] }],
-        order: [
-          ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
-        ],
-      });
+      // userId를 string으로 강제 변환
+      const validUserId = req.query.userId as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const offset = (page - 1) * limit;
 
-      const reComments = await ReComment.findAll({
-        where: {
-          UserId: validUserId,
-        },
-        include: [{ model: Post, attributes: ["id"] }],
-        order: [
-          ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
-        ],
-      });
+      if (type === "comment") {
+        const { rows: comments, count: commentsCount } =
+          await Comment.findAndCountAll({
+            where: {
+              UserId: validUserId,
+            },
+            include: [{ model: Post, attributes: ["id"] }],
+            order: [
+              ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
+            ],
+            limit: limit,
+            offset,
+            distinct: true,
+          });
 
-      const allComments = {
-        comments: comments,
-        reComments: reComments,
-      };
+        res
+          .status(200)
+          .json({ items: comments, hasMore: page * limit < commentsCount });
+      } else {
+        const { rows: reComments, count: reCommentsCount } =
+          await ReComment.findAndCountAll({
+            where: {
+              UserId: validUserId,
+            },
+            include: [{ model: Post, attributes: ["id"] }],
+            order: [
+              ["createdAt", "DESC"], // 댓글을 내림차순으로 정렬
+            ],
+            limit: limit,
+            offset,
+            distinct: true,
+          });
 
-      res.status(200).json(allComments);
+        res
+          .status(200)
+          .json({ items: reComments, hasMore: page * limit < reCommentsCount });
+      }
     } catch (error) {
       console.error(error);
       next(error);
