@@ -1202,27 +1202,37 @@ export default class PostService {
     next: NextFunction
   ): Promise<void> {
     try {
-      const userId = req.query.userId;
+      const { userId } = req.query;
 
       if (!userId) {
         res.status(400).json({ error: "UserId 쿼리 파라미터가 필요합니다" });
         return;
       }
+      // userId를 string으로 강제 변환
+      const validUserId = req.query.userId as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const offset = (page - 1) * limit;
 
-      const likedPosts = await Post.findAll({
+      const { rows: likedPosts, count } = await Post.findAndCountAll({
         include: [
           {
             model: User,
             as: "Likers",
-            where: { id: userId },
+            where: { id: validUserId },
             attributes: ["id", "email", "nickname"],
           },
         ],
         attributes: ["id", "title", "createdAt"],
         order: [["createdAt", "DESC"]],
+        limit: limit,
+        offset,
+        distinct: true, // 중복된 결과를 제거해서 정확한 count 반환
       });
 
-      res.status(200).json(likedPosts);
+      res
+        .status(200)
+        .json({ likedPosts, hasMore: offset + likedPosts.length < count });
     } catch (error) {
       console.error(error);
       next(error);
