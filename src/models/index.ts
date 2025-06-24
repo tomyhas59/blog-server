@@ -3,7 +3,7 @@ import config from "../config/config";
 import { Post } from "./post";
 import { User } from "./user";
 import { Comment } from "./comment";
-import { ReComment } from "./recomment";
+import { Reply } from "./reply";
 import { Image } from "./image";
 import { ChatMessage } from "./chatMessage";
 import { ChatRoom } from "./chatRoom";
@@ -38,7 +38,7 @@ interface Db {
   Post: typeof Post;
   Comment: typeof Comment;
   Image: typeof Image;
-  ReComment: typeof ReComment;
+  Reply: typeof Reply;
   ChatMessage: typeof ChatMessage;
   ChatRoom: typeof ChatRoom;
   Notification: typeof Notification;
@@ -50,7 +50,7 @@ const models: Db = {
   User: User.initModel(sequelize),
   Post: Post.initModel(sequelize),
   Comment: Comment.initModel(sequelize),
-  ReComment: ReComment.initModel(sequelize),
+  Reply: Reply.initModel(sequelize),
   Image: Image.initModel(sequelize),
   ChatMessage: ChatMessage.initModel(sequelize),
   ChatRoom: ChatRoom.initModel(sequelize),

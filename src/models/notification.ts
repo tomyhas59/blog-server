@@ -7,7 +7,7 @@ interface NotificationAttributes {
   UserId: number;
   PostId?: number;
   CommentId?: number;
-  ReCommentId?: number;
+  ReplyId?: number;
   type: "FOLLOW" | "SYSTEM";
   message: string;
   isRead: boolean;
@@ -24,7 +24,7 @@ export class Notification
   public UserId!: number;
   public PostId?: number;
   public CommentId?: number;
-  public ReCommentId?: number;
+  public ReplyId?: number;
   public type!: "FOLLOW" | "SYSTEM";
   public message!: string;
   public isRead!: boolean;
@@ -49,7 +49,7 @@ export class Notification
           type: DataTypes.INTEGER,
           allowNull: true,
         },
-        ReCommentId: {
+        ReplyId: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },

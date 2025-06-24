@@ -56,41 +56,41 @@ router.delete(
 
 // 대댓글 생성
 router.post(
-  "/:postId/comment/:commentId/reComment",
+  "/:postId/comment/:commentId/reply",
   isLoggedIn,
-  PostService.reCommentCreate
+  PostService.replyCreate
 );
 
 // 대댓글 수정
 router.put(
-  "/:postId/comment/:commentId/reComment/:reCommentId",
+  "/:postId/comment/:commentId/reply/:replyId",
   isLoggedIn,
-  PostService.reCommentUpdate
+  PostService.replyUpdate
 );
 
 // 대댓글 삭제
 router.delete(
-  "/:postId/comment/:commentId/reComment/:reCommentId",
+  "/:postId/comment/:commentId/reply/:replyId",
   isLoggedIn,
-  PostService.reCommentDelete
+  PostService.replyDelete
 );
 
 //좋아요
 router.patch("/:postId/like", isLoggedIn, PostService.postLike);
 router.patch("/:commentId/commentLike", isLoggedIn, PostService.commentLike);
 router.patch(
-  "/:commentId/:reCommentId/reCommentLike",
+  "/:commentId/:replyId/replyLike",
   isLoggedIn,
-  PostService.reCommentLike
+  PostService.replyLike
 );
 
 //좋아요 취소
 router.delete("/:postId/like", isLoggedIn, PostService.postUnLike);
 router.delete("/:commentId/commentLike", isLoggedIn, PostService.commentUnLike);
 router.delete(
-  "/:commentId/:reCommentId/reCommentLike",
+  "/:commentId/:replyId/replyLike",
   isLoggedIn,
-  PostService.reCommentUnLike
+  PostService.replyUnLike
 );
 
 // 좋아요 한 게시글 조회

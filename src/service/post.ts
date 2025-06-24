@@ -2,7 +2,7 @@ import { Request, Response, NextFunction, CookieOptions } from "express";
 import { Post } from "../models/post";
 import { User } from "../models/user";
 import { Comment } from "../models/comment";
-import { ReComment } from "../models/recomment";
+import { Reply } from "../models/reply";
 import { Image } from "../models/image";
 import fs from "fs";
 import path from "path";
@@ -41,7 +41,7 @@ const getCommonInclude = () => [
         attributes: ["id", "nickname"],
       },
       {
-        model: ReComment,
+        model: Reply,
         include: [
           {
             model: User,
@@ -107,7 +107,7 @@ export default class PostService {
       let order: any = [
         ["createdAt", "DESC"], // 최신순 기본값
         [Comment, "createdAt", "ASC"],
-        [Comment, ReComment, "createdAt", "ASC"],
+        [Comment, Reply, "createdAt", "ASC"],
       ];
 
       const isPostgres = process.env.NODE_ENV === "production";
@@ -127,7 +127,7 @@ export default class PostService {
           ],
           ["createdAt", "DESC"], // 좋아요 수가 같을 경우 최신순
           [Comment, "createdAt", "ASC"],
-          [Comment, ReComment, "createdAt", "ASC"],
+          [Comment, Reply, "createdAt", "ASC"],
         ];
       }
       //댓글순
@@ -145,7 +145,7 @@ export default class PostService {
           ],
           ["createdAt", "DESC"],
           [Comment, "createdAt", "ASC"],
-          [Comment, ReComment, "createdAt", "ASC"],
+          [Comment, Reply, "createdAt", "ASC"],
         ];
       }
 
@@ -154,7 +154,7 @@ export default class PostService {
         order = [
           ["viewCount", "DESC"],
           [Comment, "createdAt", "ASC"],
-          [Comment, ReComment, "createdAt", "ASC"],
+          [Comment, Reply, "createdAt", "ASC"],
         ];
       }
 
@@ -318,8 +318,8 @@ export default class PostService {
           .status(200)
           .json({ items: comments, hasMore: page * limit < commentsCount });
       } else {
-        const { rows: reComments, count: reCommentsCount } =
-          await ReComment.findAndCountAll({
+        const { rows: replies, count: repliesCount } =
+          await Reply.findAndCountAll({
             where: {
               UserId: validUserId,
             },
@@ -334,7 +334,7 @@ export default class PostService {
 
         res
           .status(200)
-          .json({ items: reComments, hasMore: page * limit < reCommentsCount });
+          .json({ items: replies, hasMore: page * limit < repliesCount });
       }
     } catch (error) {
       console.error(error);
@@ -372,7 +372,7 @@ export default class PostService {
             attributes: ["id", "nickname"],
           },
           {
-            model: ReComment,
+            model: Reply,
             include: [
               {
                 model: User,
@@ -394,11 +394,11 @@ export default class PostService {
       });
 
       const commentsCount = await Comment.count({ where: { PostId: postId } });
-      const reCommentsCount = await ReComment.count({
+      const repliesCount = await Reply.count({
         where: { PostId: postId },
       });
 
-      const totalComments = commentsCount + reCommentsCount;
+      const totalComments = commentsCount + repliesCount;
 
       //톱3 댓글
       const isPostgres = process.env.NODE_ENV === "production";
@@ -421,7 +421,7 @@ export default class PostService {
             attributes: ["id", "nickname"],
           },
           {
-            model: ReComment,
+            model: Reply,
             include: [
               {
                 model: User,
@@ -510,7 +510,7 @@ export default class PostService {
       const searchOption = req.query.searchOption as string;
       const offset = Math.max(0, (Number(page) - 1) * Number(limit)); // offset이 음수일 경우 0으로 설정
       const category = req.query.category;
-      const commentOrReCommentId = Number(req.query.commentOrReCommentId);
+      const commentOrReplyId = Number(req.query.commentOrReplyId);
 
       // 댓글과 대댓글에서 PostId를 가져오는 함수
       const fetchPostIdsFromComments = async (searchText: string) => {
@@ -520,14 +520,12 @@ export default class PostService {
             attributes: ["PostId"],
           }).then((comments) => comments.map((comment) => comment.PostId));
 
-          const reCommentPostIds = await ReComment.findAll({
+          const replyPostIds = await Reply.findAll({
             where: { content: { [Op.like]: `%${searchText}%` } },
             attributes: ["PostId"],
-          }).then((reComments) =>
-            reComments.map((reComment) => reComment.PostId)
-          );
+          }).then((replies) => replies.map((reply) => reply.PostId));
 
-          return [...new Set([...commentPostIds, ...reCommentPostIds])]; // 중복 제거
+          return [...new Set([...commentPostIds, ...replyPostIds])]; // 중복 제거
         } catch (err) {
           console.error("fetchPostIdsFromComments:", err);
           return [];
@@ -598,7 +596,7 @@ export default class PostService {
       if (postId) {
         const allComments = await Comment.findAll({
           where: { PostId: postId },
-          include: [{ model: ReComment }],
+          include: [{ model: Reply }],
           order: [["createdAt", "ASC"]],
         });
 
@@ -607,14 +605,12 @@ export default class PostService {
         if (category === "comment") {
           commentNum =
             allComments.findIndex(
-              (comment) => comment.id === commentOrReCommentId
+              (comment) => comment.id === commentOrReplyId
             ) + 1;
-        } else if (category === "reComment") {
+        } else if (category === "reply") {
           commentNum =
             allComments.findIndex((comment) =>
-              comment.ReComments.some(
-                (reComment) => reComment.id === commentOrReCommentId
-              )
+              comment.Replies.some((reply) => reply.id === commentOrReplyId)
             ) + 1;
         }
       }
@@ -739,7 +735,7 @@ export default class PostService {
         },
       });
 
-      await ReComment.destroy({
+      await Reply.destroy({
         where: {
           PostId: postId,
         },
@@ -840,7 +836,7 @@ export default class PostService {
             attributes: ["id"],
           },
           {
-            model: ReComment,
+            model: Reply,
             include: [
               {
                 model: User,
@@ -865,7 +861,7 @@ export default class PostService {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
 
-      await ReComment.destroy({
+      await Reply.destroy({
         where: {
           CommentId: commentId,
         },
@@ -917,7 +913,7 @@ export default class PostService {
     }
   }
   //----------------------------------------------------------------------
-  static async reCommentCreate(
+  static async replyCreate(
     req: Request,
     res: Response,
     next: NextFunction
@@ -937,7 +933,7 @@ export default class PostService {
         return;
       }
 
-      const reComment = await ReComment.create({
+      const reply = await Reply.create({
         PostId: post.id,
         content: req.body.content,
         CommentId: parseInt(req.params.commentId, 10),
@@ -950,15 +946,15 @@ export default class PostService {
         await Notification.create({
           UserId: Number(post.userIdx),
           PostId: Number(post.id),
-          ReCommentId: Number(reComment.id),
+          ReplyId: Number(reply.id),
           type: "SYSTEM",
           message: message,
           isRead: false,
         });
       }
 
-      const fullReComment = await ReComment.findOne({
-        where: { id: reComment.id },
+      const fullReply = await Reply.findOne({
+        where: { id: reply.id },
         include: [
           {
             model: User,
@@ -971,36 +967,32 @@ export default class PostService {
           },
         ],
       });
-      res.status(201).json(fullReComment);
+      res.status(201).json(fullReply);
     } catch (error) {
       console.log(error);
       next(error);
     }
   }
   //----------------------------------------------------------------------
-  static async reCommentDelete(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async replyDelete(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
-      const reCommentId = req.params.reCommentId;
-      await ReComment.destroy({
-        where: { id: reCommentId /*  UserId: user.id */ },
+      const replyId = req.params.replyId;
+      await Reply.destroy({
+        where: { id: replyId /*  UserId: user.id */ },
       });
 
       await Notification.destroy({
         where: {
-          ReCommentId: reCommentId,
+          ReplyId: replyId,
         },
       });
 
       res.status(200).json({
         PostId: parseInt(postId, 10), //reducer의 action.data. 값
         CommentId: parseInt(commentId, 10),
-        ReCommentId: parseInt(reCommentId, 10),
+        ReplyId: parseInt(replyId, 10),
       });
     } catch (error) {
       console.error(error);
@@ -1009,29 +1001,25 @@ export default class PostService {
   }
   //----------------------------------------------------------------------
 
-  static async reCommentUpdate(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async replyUpdate(req: Request, res: Response, next: NextFunction) {
     try {
       const postId = req.params.postId;
       const commentId = req.params.commentId;
-      const reCommentId = req.params.reCommentId;
-      await ReComment.update(
+      const replyId = req.params.replyId;
+      await Reply.update(
         {
           content: req.body.content,
         },
         {
           where: {
-            id: reCommentId,
+            id: replyId,
           },
         }
       );
       res.status(200).json({
         PostId: parseInt(postId, 10),
         CommentId: parseInt(commentId, 10),
-        ReCommentId: parseInt(reCommentId, 10),
+        ReplyId: parseInt(replyId, 10),
         content: req.body.content,
       });
     } catch (err) {
@@ -1139,7 +1127,7 @@ export default class PostService {
       next(error);
     }
   }
-  static async reCommentLike(
+  static async replyLike(
     req: Request,
     res: Response,
     next: NextFunction
@@ -1150,18 +1138,18 @@ export default class PostService {
 
       const exitingUser = await User.findByPk(user.id);
 
-      const reComment = await ReComment.findOne({
-        where: { id: req.params.reCommentId },
+      const reply = await Reply.findOne({
+        where: { id: req.params.replyId },
       });
-      if (!reComment) {
+      if (!reply) {
         res.status(403).send("게시글이 존재하지 않습니다.");
         return;
       }
 
-      await reComment.addLikers(user.id);
+      await reply.addLikers(user.id);
       res.json({
         CommentId: commentId,
-        ReCommentId: reComment.id,
+        ReplyId: reply.id,
         UserId: user.id,
         nickname: exitingUser?.nickname,
       });
@@ -1170,7 +1158,7 @@ export default class PostService {
       next(error);
     }
   }
-  static async reCommentUnLike(
+  static async replyUnLike(
     req: Request,
     res: Response,
     next: NextFunction
@@ -1178,17 +1166,17 @@ export default class PostService {
     try {
       const user = req.user as User;
       const commentId = Number(req.params.commentId);
-      const reComment = await ReComment.findOne({
-        where: { id: req.params.reCommentId },
+      const reply = await Reply.findOne({
+        where: { id: req.params.replyId },
       });
-      if (!reComment) {
+      if (!reply) {
         res.status(403).send("게시글이 존재하지 않습니다.");
         return;
       }
-      await reComment.removeLikers(user.id);
+      await reply.removeLikers(user.id);
       res.status(200).json({
         CommentId: commentId,
-        ReCommentId: reComment.id,
+        ReplyId: reply.id,
         UserId: user.id,
       });
     } catch (error) {

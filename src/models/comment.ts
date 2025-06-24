@@ -1,14 +1,14 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
 import { User } from "./user";
 import { Post } from "./post";
-import { ReComment } from "./recomment";
+import { Reply } from "./reply";
 
 interface CommentAttributes {
   id?: number;
   content: string;
   UserId: number;
   PostId: number;
-  ReComments?: ReComment[];
+  Replies?: Reply[];
   createdAt?: Date;
 }
 
@@ -20,7 +20,7 @@ export class Comment
   public content!: string;
   public UserId!: number;
   public PostId!: number;
-  public ReComments!: ReComment[];
+  public Replies!: Reply[];
   public readonly createdAt!: Date;
   public removeLikers!: (UserId: number) => Promise<void>;
   public addLikers!: (UserId: number) => Promise<void>;
@@ -63,11 +63,11 @@ export class Comment
   public static associate(models: {
     User: typeof User;
     Post: typeof Post;
-    ReComment: typeof ReComment;
+    Reply: typeof Reply;
   }) {
     Comment.belongsTo(models.User);
     Comment.belongsTo(models.Post);
-    Comment.hasMany(models.ReComment);
+    Comment.hasMany(models.Reply);
     Comment.belongsToMany(models.User, {
       through: "CommentLike",
       as: "Likers",
