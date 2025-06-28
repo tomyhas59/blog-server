@@ -10,6 +10,7 @@ import { literal, Op } from "sequelize";
 import { ChatRoom } from "../models/chatRoom";
 import { ChatMessage } from "../models/chatMessage";
 import { Notification } from "../models/notification";
+import { Hashtag } from "../models/hashtag";
 
 interface File {
   filename: string;
@@ -58,6 +59,11 @@ const getCommonInclude = () => [
       },
     ],
     attributes: ["id", "content", "createdAt"],
+  },
+  {
+    model: Hashtag,
+    attributes: ["id", "name"],
+    through: { attributes: [] },
   },
 ];
 
@@ -634,7 +640,14 @@ export default class PostService {
     try {
       const user = req.user as User;
       const files = req.files as Express.Multer.File[];
-      const { title, content } = req.body;
+      const { title, content, hashtags } = req.body;
+
+      let tags = hashtags
+        .split(/\s+/)
+        .map((tag: string) => tag.trim().replace(/^#/, ""))
+        .filter((tag: string) => tag.length > 0);
+
+      tags = [...new Set(tags)];
 
       if (user.id) {
         const post = await Post.create({
@@ -658,7 +671,19 @@ export default class PostService {
 
           await post.addImages(successfulImages);
         }
+        // 해시태그 저장 및 연결
+        if (tags.length > 0) {
+          const tagInstances = await Promise.all(
+            tags.map((name: string) =>
+              Hashtag.findOrCreate({ where: { name } })
+            )
+          );
 
+          // findOrCreate 반환값은 [instance, created] 이라서 instance만 꺼냄
+          const hashtagModels = tagInstances.map(([tag]) => tag);
+
+          await post.addHashtags(hashtagModels);
+        }
         const fullPost = await Post.findOne({
           where: { id: post.id }, //게시글 쓰면 자동으로 id 생성
           include: getCommonInclude(),

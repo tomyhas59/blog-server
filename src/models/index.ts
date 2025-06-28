@@ -9,6 +9,7 @@ import { ChatMessage } from "./chatMessage";
 import { ChatRoom } from "./chatRoom";
 import { Notification } from "./notification";
 import { Dialect } from "sequelize";
+import { Hashtag } from "./hashtag";
 
 const env = (process.env.NODE_ENV || "development") as
   | "development"
@@ -42,6 +43,7 @@ interface Db {
   ChatMessage: typeof ChatMessage;
   ChatRoom: typeof ChatRoom;
   Notification: typeof Notification;
+  Hashtag: typeof Hashtag;
 }
 
 const models: Db = {
@@ -55,6 +57,7 @@ const models: Db = {
   ChatMessage: ChatMessage.initModel(sequelize),
   ChatRoom: ChatRoom.initModel(sequelize),
   Notification: Notification.initModel(sequelize),
+  Hashtag: Hashtag.initModel(sequelize),
 };
 
 // 각 모델의 associate 메서드 호출

@@ -4,6 +4,7 @@ import { Comment } from "./comment";
 import { Image } from "./image";
 import { Reply } from "./reply";
 import { Notification } from "./notification";
+import { Hashtag } from "./hashtag";
 
 interface PostAttributes {
   id?: number;
@@ -30,6 +31,7 @@ export class Post
   public addImages!: (images: Image[]) => Promise<void>;
   public removeLikers!: (UserId: number) => Promise<void>;
   public addLikers!: (UserId: number) => Promise<void>;
+  public addHashtags!: (Hashtags: Hashtag[]) => Promise<void>;
 
   public static initModel(sequelize: Sequelize): typeof Post {
     Post.init(
@@ -75,6 +77,7 @@ export class Post
     Image: typeof Image;
     Reply: typeof Reply;
     Notification: typeof Notification;
+    Hashtag: typeof Hashtag;
   }) {
     Post.belongsTo(models.User, { foreignKey: "userIdx" });
     Post.hasMany(models.Comment);
@@ -84,6 +87,12 @@ export class Post
     Post.belongsToMany(models.User, {
       through: "Like",
       as: "Likers",
+    });
+
+    Post.belongsToMany(models.Hashtag, {
+      through: "PostHashtag",
+      foreignKey: "postId",
+      otherKey: "hashtagId",
     });
   }
 }
