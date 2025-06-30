@@ -699,7 +699,7 @@ export default class PostService {
   //------------------------------------------------------------------------
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, content, postId } = req.body;
+      const { title, content, postId, hashtags } = req.body;
       const files = req.files as File[];
 
       await Post.update(
@@ -714,6 +714,7 @@ export default class PostService {
           },
         }
       );
+
       const post = await Post.findOne({
         where: { id: parseInt(postId) },
         include: [
@@ -722,6 +723,29 @@ export default class PostService {
           },
         ],
       });
+
+      if (hashtags !== undefined) {
+        let tags = hashtags
+          .split(/\s+/)
+          .map((tag: string) => tag.trim().replace(/^#/, ""))
+          .filter((tag: string) => tag.length > 0);
+
+        tags = [...new Set(tags)];
+
+        if (tags.length > 0) {
+          const tagInstances = await Promise.all(
+            tags.map((name: string) =>
+              Hashtag.findOrCreate({ where: { name } })
+            )
+          );
+          const hashtagModels = tagInstances.map(([tag]) => tag);
+
+          // 기존 연결 갱신
+          await post?.setHashtags(hashtagModels);
+        } else {
+          await post?.setHashtags([]);
+        }
+      }
 
       const newImagePaths = files.map((file) => file.filename);
       if (newImagePaths) {

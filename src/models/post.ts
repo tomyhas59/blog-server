@@ -32,6 +32,7 @@ export class Post
   public removeLikers!: (UserId: number) => Promise<void>;
   public addLikers!: (UserId: number) => Promise<void>;
   public addHashtags!: (Hashtags: Hashtag[]) => Promise<void>;
+  public setHashtags!: (hashtags: Hashtag[] | number[]) => Promise<void>;
 
   public static initModel(sequelize: Sequelize): typeof Post {
     Post.init(
