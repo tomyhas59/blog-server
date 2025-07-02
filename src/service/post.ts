@@ -347,6 +347,34 @@ export default class PostService {
       next(error);
     }
   }
+  //---------------------------------------------------------------
+  static async getHashtagPosts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const hashtagName = req.params.hashtagName;
+
+    try {
+      const hashtag = await Hashtag.findOne({
+        where: { name: hashtagName },
+      });
+
+      if (!hashtag) {
+        res.json({ hashtagPosts: [], hashtagTotal: 0 });
+        return;
+      }
+      const hashtagPosts = await hashtag.getPosts({
+        include: [{ model: User, attributes: ["id", "nickname"] }],
+        order: [["createdAt", "DESC"]],
+      });
+
+      res.json({ hashtagPosts, hashtagTotal: hashtagPosts.length });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
 
   //----------------------------------------------------------------------
   static async getPostComments(

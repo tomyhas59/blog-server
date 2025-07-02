@@ -1,4 +1,4 @@
-import { DataTypes, Model, Sequelize, Optional } from "sequelize";
+import { DataTypes, Model, Sequelize, Optional, FindOptions } from "sequelize";
 import { Post } from "./post";
 
 interface HashtagAttributes {
@@ -14,6 +14,8 @@ export class Hashtag
 {
   public id!: number;
   public name!: string;
+
+  public getPosts!: (options?: FindOptions) => Promise<Post[]>;
 
   public static initModel(sequelize: Sequelize): typeof Hashtag {
     Hashtag.init(
