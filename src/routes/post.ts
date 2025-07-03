@@ -24,7 +24,7 @@ router.get("/comment", PostService.getPostComments);
 router.get("/user/comment", isLoggedIn, PostService.getUserComments);
 
 // 해시태그 게시글 조회
-router.get("/hashtag/:hashtagName", PostService.getHashtagPosts);
+router.get("/hashtag", PostService.getHashtagPosts);
 // 게시글 작성
 router.post("/", isLoggedIn, upload.array("image"), PostService.create);
 
