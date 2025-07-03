@@ -365,7 +365,7 @@ export default class PostService {
         return;
       }
       const hashtagPosts = await hashtag.getPosts({
-        include: [{ model: User, attributes: ["id", "nickname"] }],
+        include: getCommonInclude(),
         order: [["createdAt", "DESC"]],
       });
 
