@@ -21,6 +21,7 @@ const getCommonInclude = () => [
     model: User,
     include: [{ model: Image, attributes: ["src"] }],
     attributes: ["id", "email", "nickname"],
+    required: true,
   },
   { model: Image },
   {
@@ -173,12 +174,12 @@ export default class PostService {
       });
 
       // 전체 포스트 수 카운트
-      const totalPosts = await Post.count();
+      const totalPostsCount = await Post.count();
 
       // 응답 반환
       res.status(200).json({
         posts,
-        totalPosts,
+        totalPostsCount,
       });
     } catch (error) {
       console.error(error);
@@ -317,7 +318,7 @@ export default class PostService {
             ],
             limit: limit,
             offset,
-            distinct: true,
+            distinct: true, // 중복된 결과를 제거해서 정확한 count 반환
           });
 
         res
@@ -335,7 +336,7 @@ export default class PostService {
             ],
             limit: limit,
             offset,
-            distinct: true,
+            distinct: true, // 중복된 결과를 제거해서 정확한 count 반환
           });
 
         res
@@ -368,7 +369,7 @@ export default class PostService {
         return;
       }
 
-      const totalHashtagPosts = await hashtag.countPosts();
+      const totalHashtagPostsCount = await hashtag.countPosts();
 
       const hashtagPosts = await hashtag.getPosts({
         include: getCommonInclude(),
@@ -377,7 +378,7 @@ export default class PostService {
         offset,
       });
 
-      res.json({ hashtagPosts, totalHashtagPosts });
+      res.json({ hashtagPosts, totalHashtagPostsCount });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "서버 오류" });
@@ -440,7 +441,7 @@ export default class PostService {
         where: { PostId: postId },
       });
 
-      const totalComments = commentsCount + repliesCount;
+      const totalCommentsCount = commentsCount + repliesCount;
 
       //톱3 댓글
       const isPostgres = process.env.NODE_ENV === "production";
@@ -493,7 +494,7 @@ export default class PostService {
 
       res
         .status(200)
-        .json({ comments, commentsCount, totalComments, top3Comments });
+        .json({ comments, commentsCount, totalCommentsCount, top3Comments });
     } catch (err) {
       console.error(err);
     }
@@ -617,11 +618,17 @@ export default class PostService {
       let searchedPosts = await Post.findAll({
         where: whereCondition,
         include: getCommonInclude(),
+        limit,
+        offset,
         order: [["createdAt", "DESC"]],
       });
 
-      const totalSearchedPosts = searchedPosts.length;
-      searchedPosts = searchedPosts.slice(offset, offset + Number(limit));
+      //검색된 게시글 총 수
+      const totalSearchedPostsCount = await Post.count({
+        where: whereCondition,
+        include: getCommonInclude(),
+        distinct: true, // 중복된 결과를 제거해서 정확한 count 반환
+      });
 
       if (searchedPosts.length === 0) {
         res.status(404).json(null);
@@ -629,7 +636,6 @@ export default class PostService {
       }
 
       //전체 게시판 글 중에서 몇 번째 글인지 추적
-      //
       let postNum;
       //특정 댓글이나 대댓글이 그 글의 몇 번째 댓글인지 추적
       let commentNum = -1;
@@ -662,7 +668,7 @@ export default class PostService {
 
       res.status(200).json({
         searchedPosts,
-        totalSearchedPosts,
+        totalSearchedPostsCount,
         searchOption,
         postNum,
         commentNum,
