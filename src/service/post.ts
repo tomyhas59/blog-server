@@ -628,7 +628,10 @@ export default class PostService {
         return;
       }
 
+      //전체 게시판 글 중에서 몇 번째 글인지 추적
+      //
       let postNum;
+      //특정 댓글이나 대댓글이 그 글의 몇 번째 댓글인지 추적
       let commentNum = -1;
 
       const allPosts = await Post.findAll({
