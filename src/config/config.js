@@ -1,4 +1,3 @@
-// src/config/config.js
 require("dotenv").config();
 
 // 데이터베이스 설정 객체 생성
@@ -6,7 +5,7 @@ const config = {
   development: {
     port: parseInt(process.env.DEV_DATABASE_PORT || "3306", 10),
     host: process.env.DEV_DATABASE_HOST || "localhost",
-    database: process.env.DEV_DATABASE_NAME || "dev_db",
+    database: process.env.DEV_DATABASE_NAME || "tomyhasblog",
     username: process.env.DEV_DATABASE_USER || "root",
     password: process.env.DEV_DATABASE_PASSWORD || "password",
     dialect: process.env.DEV_DATABASE_DIALECT || "mariadb",
