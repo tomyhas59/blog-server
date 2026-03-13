@@ -15,7 +15,7 @@ export default class UserService {
   static async signUp(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const exUser = await User.findOne({
@@ -53,7 +53,7 @@ export default class UserService {
   static async logIn(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = await User.findOne({
@@ -96,7 +96,7 @@ export default class UserService {
 
       const isValidPassword = await bcrypt.compare(
         req.body.password,
-        user.password
+        user.password,
       );
 
       if (!isValidPassword) {
@@ -107,18 +107,19 @@ export default class UserService {
       const accessToken = jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET as string,
-        { expiresIn: "15m" }
+        { expiresIn: "15m" },
       );
       const refreshToken = jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET as string,
-        { expiresIn: "7d" }
+        { expiresIn: "7d" },
       );
 
       const cookieOptions: CookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "None", "Lax", "Strict" 중 하나로 설정
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       };
 
       req.user = {
@@ -127,7 +128,10 @@ export default class UserService {
         email: user.email,
       };
 
-      res.cookie("accessToken", accessToken, cookieOptions);
+      res.cookie("accessToken", accessToken, {
+        ...cookieOptions,
+        maxAge: 15 * 60 * 1000,
+      });
       res.cookie("refreshToken", refreshToken, cookieOptions);
 
       //user.toJSON()을 호출하여 순수 JSON 객체 생성
@@ -149,7 +153,7 @@ export default class UserService {
   static async modifyNickname(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const newNickname = req.body.newNickname;
@@ -177,7 +181,7 @@ export default class UserService {
   static async changePassword(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { prevPassword, newPassword } = req.body;
@@ -216,7 +220,7 @@ export default class UserService {
   static async createUserImage(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const user = req.user as User;
@@ -230,7 +234,7 @@ export default class UserService {
             const imagePath = path.join(
               __dirname,
               "../../uploads",
-              existingImage.src
+              existingImage.src,
             );
 
             if (fs.existsSync(imagePath)) {
@@ -277,7 +281,7 @@ export default class UserService {
   static async removeUserImage(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const user = req.user as User;
@@ -303,7 +307,7 @@ export default class UserService {
   static async refreshToken(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const refreshToken = req.cookies.refreshToken;
 
@@ -315,7 +319,7 @@ export default class UserService {
     try {
       const decoded = jwt.verify(
         refreshToken,
-        process.env.JWT_SECRET as string
+        process.env.JWT_SECRET as string,
       ) as JwtPayload;
       const user = await User.findOne({ where: { id: decoded.id } });
 
@@ -327,7 +331,7 @@ export default class UserService {
       const newAccessToken = jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET as string,
-        { expiresIn: "15m" }
+        { expiresIn: "15m" },
       );
 
       res.cookie("accessToken", newAccessToken, {
@@ -478,7 +482,7 @@ export default class UserService {
   static async follow(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const user = req.user as User;
     const userId = user.id;
@@ -527,7 +531,7 @@ export default class UserService {
   static async unFollow(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const user = req.user as User;
     const userId = user.id;
@@ -576,7 +580,7 @@ export default class UserService {
   static async getNewFollowersCount(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const userId = Number(req.query.userId);
 
