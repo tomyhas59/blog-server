@@ -128,7 +128,7 @@ export default class PostService {
         order = [
           [
             literal(
-              `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${PostId} = ${postIdField})`
+              `(SELECT COUNT(*) FROM ${likeTable} WHERE ${likeTable}.${PostId} = ${postIdField})`,
             ),
             "DESC", // 좋아요 수 기준 내림차순
           ],
@@ -146,7 +146,7 @@ export default class PostService {
         order = [
           [
             literal(
-              `(SELECT COUNT(*) FROM ${commentsTable} WHERE ${commentsTable}.${PostId} = ${postIdField})`
+              `(SELECT COUNT(*) FROM ${commentsTable} WHERE ${commentsTable}.${PostId} = ${postIdField})`,
             ),
             "DESC",
           ],
@@ -192,7 +192,7 @@ export default class PostService {
   static async getPost(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const postId = Number(req.params.postId);
@@ -242,7 +242,7 @@ export default class PostService {
   static async getUserPosts(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { userId } = req.query;
@@ -266,7 +266,21 @@ export default class PostService {
             include: [{ model: Image, attributes: ["src"] }],
             attributes: ["id", "nickname"],
           },
+          { model: Image, attributes: ["src"] },
           { model: Notification, attributes: ["id", "message", "isRead"] },
+          {
+            model: Comment,
+            attributes: ["id"],
+          },
+          {
+            model: Reply,
+            attributes: ["id"],
+          },
+          {
+            model: User,
+            as: "Likers",
+            attributes: ["id"],
+          },
         ],
         order: [["createdAt", "DESC"]],
         limit: limit,
@@ -289,7 +303,7 @@ export default class PostService {
   static async getUserComments(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const userId = req.query.userId;
@@ -352,7 +366,7 @@ export default class PostService {
   static async getHashtagPosts(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const hashtagName = req.query.hashtagName as string;
     const page = Number(req.query.page) || 1;
@@ -389,7 +403,7 @@ export default class PostService {
   static async getPostComments(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const { page = 1, limit = 10 } = req.query;
     const postId = Number(req.query.postId);
@@ -484,7 +498,7 @@ export default class PostService {
         order: [
           [
             literal(
-              `(SELECT COUNT(*) FROM ${commentLikeTable} WHERE ${commentLikeTable}.${CommentId} = ${commentIdField})`
+              `(SELECT COUNT(*) FROM ${commentLikeTable} WHERE ${commentLikeTable}.${CommentId} = ${commentIdField})`,
             ),
             "DESC", // 좋아요 수 기준 내림차순
           ],
@@ -503,7 +517,7 @@ export default class PostService {
   static async getCommentPage(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const commentId = Number(req.query.commentId);
@@ -543,7 +557,7 @@ export default class PostService {
   static async search(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const postId = Number(req.query.postId);
@@ -656,12 +670,12 @@ export default class PostService {
         if (category === "comment") {
           commentNum =
             allComments.findIndex(
-              (comment) => comment.id === commentOrReplyId
+              (comment) => comment.id === commentOrReplyId,
             ) + 1;
         } else if (category === "reply") {
           commentNum =
             allComments.findIndex((comment) =>
-              comment.Replies.some((reply) => reply.id === commentOrReplyId)
+              comment.Replies.some((reply) => reply.id === commentOrReplyId),
             ) + 1;
         }
       }
@@ -705,7 +719,7 @@ export default class PostService {
         // 이미지 저장
         if (files && files.length > 0) {
           const imagePromises = files.map((file) =>
-            Image.create({ src: file.filename })
+            Image.create({ src: file.filename }),
           );
 
           const imageResults = await Promise.allSettled(imagePromises);
@@ -720,8 +734,8 @@ export default class PostService {
         if (tags.length > 0) {
           const tagInstances = await Promise.all(
             tags.map((name: string) =>
-              Hashtag.findOrCreate({ where: { name } })
-            )
+              Hashtag.findOrCreate({ where: { name } }),
+            ),
           );
 
           // findOrCreate 반환값은 [instance, created] 이라서 instance만 꺼냄
@@ -757,7 +771,7 @@ export default class PostService {
             id: parseInt(postId),
             /*    userIdx: user.id, */
           },
-        }
+        },
       );
 
       const post = await Post.findOne({
@@ -780,8 +794,8 @@ export default class PostService {
         if (tags.length > 0) {
           const tagInstances = await Promise.all(
             tags.map((name: string) =>
-              Hashtag.findOrCreate({ where: { name } })
-            )
+              Hashtag.findOrCreate({ where: { name } }),
+            ),
           );
           const hashtagModels = tagInstances.map(([tag]) => tag);
 
@@ -796,8 +810,8 @@ export default class PostService {
       if (newImagePaths) {
         const images = await Promise.all(
           newImagePaths.map((filename: string) =>
-            Image.create({ src: filename })
-          )
+            Image.create({ src: filename }),
+          ),
         );
 
         await post?.addImages(images); //addImages는 Post 모델 관계 설정에서 나온 함수
@@ -876,7 +890,7 @@ export default class PostService {
   static async commentCreate(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -994,7 +1008,7 @@ export default class PostService {
           where: {
             id: commentId,
           },
-        }
+        },
       );
       res.status(200).json({
         PostId: parseInt(postId, 10),
@@ -1010,7 +1024,7 @@ export default class PostService {
   static async replyCreate(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1108,7 +1122,7 @@ export default class PostService {
           where: {
             id: replyId,
           },
-        }
+        },
       );
       res.status(200).json({
         PostId: parseInt(postId, 10),
@@ -1125,7 +1139,7 @@ export default class PostService {
   static async postLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1153,7 +1167,7 @@ export default class PostService {
   static async postUnLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1174,7 +1188,7 @@ export default class PostService {
   static async commentLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1203,7 +1217,7 @@ export default class PostService {
   static async commentUnLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1224,7 +1238,7 @@ export default class PostService {
   static async replyLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1255,7 +1269,7 @@ export default class PostService {
   static async replyUnLike(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const user = req.user as User;
@@ -1281,7 +1295,7 @@ export default class PostService {
   static async getLikedPosts(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { userId } = req.query;
@@ -1324,7 +1338,7 @@ export default class PostService {
   static async createChatRoom(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const user = req.user as User;
 
@@ -1411,7 +1425,7 @@ export default class PostService {
   static async getChatMessage(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { roomId } = req.query;
@@ -1444,7 +1458,7 @@ export default class PostService {
   static async findUserChatRooms(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     try {
       const { userId } = req.query;
@@ -1495,7 +1509,7 @@ export default class PostService {
             ...chatRoom.toJSON(),
             UnReadMessages: unReadMessage,
           };
-        })
+        }),
       );
 
       res.status(200).json(chatRoomsWithUnRead);
@@ -1508,7 +1522,7 @@ export default class PostService {
   static async readChatMessages(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     const { messageId } = req.params;
 
